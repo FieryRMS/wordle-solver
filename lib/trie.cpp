@@ -7,7 +7,7 @@ Trie::Trie()
     root = new Node();
 }
 
-Trie::Node::Node() : children(), count(0) {}
+Trie::Node::Node() : children(), count(0), isEnd(false) {}
 
 Trie::~Trie()
 {
@@ -35,7 +35,11 @@ void Trie::insert(const string &word)
 void Trie::_insert(Node *node, string word)
 {
     node->count++;
-    if (word.empty()) return;
+    if (word.empty())
+    {
+        node->isEnd = true;
+        return;
+    }
 
     int i = index(word[0]);
     if (!node->children[i]) node->children[i] = new Node();
@@ -65,7 +69,6 @@ string Trie::getNthWord(int n) const
     Node *node = root;
     while (n > 0)
     {
-        bool flag = false;
         for (int i = 0; i < 26; i++)
         {
             if (!node->children[i]) continue;
@@ -73,12 +76,15 @@ string Trie::getNthWord(int n) const
             {
                 word += 'a' + i;
                 node = node->children[i];
-                flag = true;
+                if (node->isEnd)
+                {
+                    n--;
+                    assert(n == 0 && "n must be 0");
+                }
                 break;
             }
             n -= node->children[i]->count;
         }
-        if (!flag) break;
     }
     return word;
 }

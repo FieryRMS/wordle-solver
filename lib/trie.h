@@ -16,6 +16,7 @@ class Trie {
     struct Node {
         Node *children[27];
         int count;
+        bool isEnd;
         Node();
 
         ~Node();
