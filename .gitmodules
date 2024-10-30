@@ -1,0 +1,3 @@
+[submodule "res/wordle-list"]
+	path = res/wordle
+	url = https://github.com/tabatkins/wordle-list.git

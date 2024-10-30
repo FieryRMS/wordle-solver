@@ -1,0 +1,46 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "test",
+            "type": "shell",
+            "command": "WordleSolver",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "focus": true,
+                "clear": true,
+                "showReuseMessage": false
+            },
+            "options": {
+                "cwd": "${workspaceFolder}/build"
+            },
+            "problemMatcher": []
+        },
+        {
+            "type": "cmake",
+            "label": "CMake: build",
+            "command": "build",
+            "targets": [
+                "all"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "presentation": {
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared",
+            },
+            "detail": "CMake template build task"
+        }
+    ]
+}
