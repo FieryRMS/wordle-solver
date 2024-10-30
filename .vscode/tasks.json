@@ -39,6 +39,7 @@
                 "reveal": "silent",
                 "focus": false,
                 "panel": "shared",
+                "showReuseMessage": false
             },
             "detail": "CMake template build task"
         }

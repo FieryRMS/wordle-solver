@@ -21,6 +21,8 @@ int main()
         cout << "Enter your guess: ";
         cin >> guess;
 
+        for (auto &c : guess) c = tolower(c);
+
         if (!wordle.isWordValid(guess))
         {
             cout << "Invalid word!" << endl;

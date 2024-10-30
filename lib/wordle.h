@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include "trie.h"
 
 using namespace std;
 
@@ -42,5 +43,5 @@ class Wordle {
     int guesses;
     int maxGuesses = 6;
     GameStatus status;
-    vector<string> wordList;
+    Trie wordlist;
 };

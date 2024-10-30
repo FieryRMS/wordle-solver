@@ -15,18 +15,18 @@ Wordle::Wordle() : guesses(0), status(GameStatus::ONGOING)
         exit(1);
     }
 
-    string line;
-    while (getline(file, line)) wordList.push_back(line);
+    string word;
+    while (file >> word) wordlist.insert(word);
 
     // choose a random word from the list
     random_device rd;
     mt19937 gen(rd());
-    uniform_int_distribution<> dis(0, wordList.size() - 1);
-    targetWord = wordList[dis(gen)];
+    uniform_int_distribution<> dis(1, wordlist.count(""));
+    targetWord = wordlist.getNthWord(dis(gen));
 }
 
-Wordle::Wordle(const string &word)
-    : targetWord(word), guesses(0), status(GameStatus::ONGOING)
+Wordle::Wordle(const string &targetWord)
+    : targetWord(targetWord), guesses(0), status(GameStatus::ONGOING)
 {
     ifstream file(filepath);
     if (!file.is_open())
@@ -35,17 +35,19 @@ Wordle::Wordle(const string &word)
         exit(1);
     }
 
-    string line;
-    while (getline(file, line)) wordList.push_back(line);
+    string word;
+    while (file >> word) wordlist.insert(word);
 }
 
 bool Wordle::isWordValid(const string &word)
 {
     if (word.size() != targetWord.size()) return false;
 
+    // if word contains . return false
+    if (word.find('.') != string::npos) return false;
+
     // if not in wordlist return false
-    if (find(wordList.begin(), wordList.end(), word) != wordList.end())
-        return true;
+    if (wordlist.count(word) == 1) return true;
     return false;
 }
 
