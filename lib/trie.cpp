@@ -69,6 +69,7 @@ string Trie::getNthWord(int n) const
     Node *node = root;
     while (n > 0)
     {
+        bool flag = false;
         for (int i = 0; i < 26; i++)
         {
             if (!node->children[i]) continue;
@@ -76,15 +77,13 @@ string Trie::getNthWord(int n) const
             {
                 word += 'a' + i;
                 node = node->children[i];
-                if (node->isEnd)
-                {
-                    n--;
-                    assert(n == 0 && "n must be 0");
-                }
+                if (node->isEnd) n--; // should be 0 at this point
+                flag = true;
                 break;
             }
             n -= node->children[i]->count;
         }
+        if (!flag) break;
     }
     return word;
 }
