@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <string>
 #include <vector>
 #include "trie.h"
@@ -39,9 +40,10 @@ class Wordle {
     void setTargetWord(const string &word) { targetWord = word; }
 
    private:
+    static const size_t N = 5;
     string targetWord;
     int guesses;
     int maxGuesses = 6;
     GameStatus status;
-    Trie wordlist;
+    Trie<N> wordlist;
 };

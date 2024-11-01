@@ -6,18 +6,8 @@ using namespace std;
 
 const string filepath = "res/wordle/words";
 
-Wordle::Wordle() : guesses(0), status(GameStatus::ONGOING)
+Wordle::Wordle() : Wordle("")
 {
-    ifstream file(filepath);
-    if (!file.is_open())
-    {
-        cerr << "Error opening file: " << filepath << endl;
-        exit(1);
-    }
-
-    string word;
-    while (file >> word) wordlist.insert(word);
-
     // choose a random word from the list
     random_device rd;
     mt19937 gen(rd());
@@ -41,11 +31,11 @@ Wordle::Wordle(const string &targetWord)
 
 bool Wordle::isWordValid(const string &word)
 {
-    if (word.size() != targetWord.size()) return false;
+    if (word.size() != N) return false;
 
-    // if word contains . return false
-    if (word.find('.') != string::npos) return false;
-
+    for (auto &c : word)
+        if (!islower(c)) return false;
+    
     // if not in wordlist return false
     if (wordlist.count(word) == 1) return true;
     return false;
@@ -55,12 +45,12 @@ vector<Wordle::TileType> Wordle::guess(const string &guess)
 {
     if (isGameOver()) return {};
 
-    vector<TileType> result(targetWord.size(), TileType::NONE);
-    vector<bool> visited(targetWord.size(), false);
+    vector<TileType> result(N, TileType::NONE);
+    vector<bool> visited(N, false);
 
     // check for correct letters
     int cnt = 0;
-    for (int i = 0; i < targetWord.size(); i++)
+    for (int i = 0; i < N; i++)
     {
         if (targetWord[i] == guess[i])
         {
@@ -71,7 +61,7 @@ vector<Wordle::TileType> Wordle::guess(const string &guess)
     }
 
     // check for misplaced letters
-    for (int i = 0; i < guess.size(); i++)
+    for (int i = 0; i < N; i++)
     {
         if (result[i] == TileType::CORRECT) continue;
         for (int j = 0; j < targetWord.size(); j++)

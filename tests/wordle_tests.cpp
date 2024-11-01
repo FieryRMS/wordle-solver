@@ -16,7 +16,7 @@ TEST(WORDLE, VALID_WORD)
     EXPECT_TRUE(wordle.isWordValid("world"));
     EXPECT_TRUE(wordle.isWordValid("aahed"));
     EXPECT_FALSE(wordle.isWordValid("worlds"));
-    EXPECT_DEATH(wordle.isWordValid("12345"), ".*must be lower case letter or");
+    EXPECT_FALSE(wordle.isWordValid("12345"));
     EXPECT_FALSE(wordle.isWordValid(""));
     // returns one item but contains .
     EXPECT_FALSE(wordle.isWordValid("...ij"));
@@ -104,28 +104,47 @@ TEST(TRIE, COUNT)
     ifstream file(filepath);
     ASSERT_TRUE(file.is_open());
 
-    Trie trie;
+    Trie<5> trie;
     string word;
     while (file >> word) trie.insert(word);
 
     EXPECT_EQ(trie.count(""), 14855);
-    EXPECT_EQ(trie.count("."), 14855);
-    EXPECT_EQ(trie.count(".."), 14855);
-    EXPECT_EQ(trie.count("..."), 14855);
-    EXPECT_EQ(trie.count("...."), 14855);
-    EXPECT_EQ(trie.count("....."), 14855);
+    EXPECT_EQ(trie.count(trie.query("")), 14855);
 
     EXPECT_EQ(trie.count("hello"), 1);
     EXPECT_EQ(trie.count("world"), 1);
     EXPECT_EQ(trie.count("aahed"), 1);
 
     EXPECT_EQ(trie.count("worlds"), 0);
-    EXPECT_DEATH(trie.count("12345"), ".*must be lower case letter or");
+    EXPECT_DEATH(trie.count("12345"), ".*must be lower case letter");
 
-    EXPECT_EQ(trie.count(".a.a."), 278);
-    EXPECT_EQ(trie.count(".z.a."), 1);
-    EXPECT_EQ(trie.count("..a.y"), 97);
-    EXPECT_EQ(trie.count("cur.."), 25);
+    EXPECT_EQ(trie.count(trie.query(".z.a.")), 1);
+    EXPECT_EQ(trie.count(trie.query("..a.y")), 97);
+    EXPECT_EQ(trie.count(trie.query("cur..")), 25);
+
+    auto query1 = trie.query(".a.a.");
+    EXPECT_EQ(trie.count(query1), 278);
+
+    query1.include("b");
+    EXPECT_EQ(trie.count(query1), 25);
+
+    query1.setMisplaced("b", 0);
+    EXPECT_EQ(trie.count(query1), 12);
+
+    query1.exclude("s");
+    EXPECT_EQ(trie.count(query1), 8);
+
+    auto query2 = trie.query(".e...");
+    EXPECT_EQ(trie.count(query2), 1857);
+
+    query2.include("at");
+    EXPECT_EQ(trie.count(query2), 110);
+
+    query2.setMisplaced("sa", 4);
+    EXPECT_EQ(trie.count(query2), 53);
+
+    query2.exclude("id");
+    EXPECT_EQ(trie.count(query2), 45);
 }
 
 TEST(TRIE, NTH_WORD)
@@ -133,7 +152,7 @@ TEST(TRIE, NTH_WORD)
     ifstream file(filepath);
     ASSERT_TRUE(file.is_open());
 
-    Trie trie;
+    Trie<5> trie;
     string word;
     while (file >> word) trie.insert(word);
 
