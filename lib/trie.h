@@ -1,6 +1,7 @@
 #pragma once
 #include <cstddef>
 #include <string>
+#include <vector>
 
 using namespace std;
 template <size_t N>
@@ -9,9 +10,14 @@ class Trie {
     class Query {
        public:
         void parse(const string &s);
+        void setCorrect(const char &c, const int &idx);
         void include(const string &s);
+        void include(const char &c, const int count = 1);
         void exclude(const string &s);
+        void exclude(const char &c);
         void setMisplaced(const string &s, const int &idx);
+        void setMisplaced(const char &c, const int &idx);
+        void print() const;
 
        private:
         Query(const string &s);
@@ -26,10 +32,10 @@ class Trie {
 
     Trie();
     void insert(const string &word);
-    int count(Query query) const;
+    int count(Query query, vector<string> *result = nullptr) const;
     int count(const string &word) const;
     string getNthWord(int n) const;
-    Query query(const string &s) const;
+    Query query(const string s = "") const;
 
     ~Trie();
 
@@ -45,7 +51,11 @@ class Trie {
 
     Node *root;
     static int index(const char &c);
-    int _count(Query &query, Node *node, int idx = 0) const;
+    int _count(Query &query,
+               Node *node,
+               vector<string> *result,
+               string *word = nullptr,
+               int idx = 0) const;
 };
 
-#include "trie.tpp" // IWYU pragma: keep
+#include "trie.tpp"  // IWYU pragma: keep

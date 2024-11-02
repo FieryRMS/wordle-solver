@@ -35,15 +35,18 @@ class Wordle {
     int getMaxGuesses() const { return maxGuesses; }
     string getTargetWord() const { return targetWord; }
     GameStatus getStatus() const { return status; }
+    int count(vector<string> *result = nullptr);
 
     // Setters
     void setTargetWord(const string &word) { targetWord = word; }
 
    private:
+    void updateQuery(const string &guess, const vector<TileType> &result);
     static const size_t N = 5;
     string targetWord;
     int guesses;
     int maxGuesses = 6;
     GameStatus status;
     Trie<N> wordlist;
+    Trie<N>::Query query;
 };

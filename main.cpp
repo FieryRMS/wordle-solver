@@ -17,6 +17,17 @@ int main()
     {
         cout << "GUESS " << wordle.getGuesses() + 1 << "/"
              << wordle.getMaxGuesses() << endl;
+        // cout << "TARGET WORD: " << wordle.getTargetWord() << endl;
+        int cnt = wordle.count();
+        cout << "REMAINING POSSIBILITIES: " << cnt << endl;
+        if (cnt <= 50)
+        {
+            vector<string> result;
+            wordle.count(&result);
+            cout << "POSSIBILITIES: {";
+            for (auto &word : result) cout << '"' << word << "\", ";
+            cout << "}" << endl;
+        }
         string guess;
         cout << "Enter your guess: ";
         cin >> guess;
