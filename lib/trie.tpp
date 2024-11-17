@@ -235,6 +235,14 @@ void Trie<N>::Query::setMisplaced(const char &c, const int &idx)
     misplaced[idx][index(c)] = true;
 }
 
+/**
+ * @brief Count the number of words that match the query
+ *
+ * @tparam N
+ * @param query
+ * @param result
+ * @return int
+ */
 template <size_t N>
 int Trie<N>::count(Query query, vector<string> *result) const
 {
@@ -268,8 +276,7 @@ int Trie<N>::_count(Query &query,
         if (query.excludes[i] && query.includes[i] == 0) continue;
         if (query.misplaced[idx][i]) continue;
         if (query.letters[idx] && query.letters[idx] != 'a' + i) continue;
-        // includesCount left, N - idx steps left but current letter not
-        // included
+        // includesCount left, N - idx steps left but current letter not included
         if (query.includesCount == N - idx && query.includes[i] == 0) continue;
         if (query.includes[i])
             query.includes[i]--, query.includesCount--, flag = true;

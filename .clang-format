@@ -17,3 +17,4 @@ AllowShortIfStatementsOnASingleLine: AllIfsAndElse
 Cpp11BracedListStyle: false
 AllowShortLoopsOnASingleLine: true
 BreakArrays: true
+ReflowComments: false
