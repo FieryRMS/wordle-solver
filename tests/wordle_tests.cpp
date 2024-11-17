@@ -45,15 +45,17 @@ TEST(WORDLE, GAME_WIN)
 TEST(WORDLE, GAME_EDGE_CASES)
 {
     Wordle wordle("aahed");
-    auto result = wordle.guess("bruja"), expected = vector<Wordle::TileType>{
-        Wordle::TileType::NONE, Wordle::TileType::NONE, Wordle::TileType::NONE,
-        Wordle::TileType::NONE, Wordle::TileType::MISPLACED
-    };
+    auto result = wordle.guess("bruja").result,
+         expected = vector<Wordle::TileType>{ Wordle::TileType::NONE,
+                                              Wordle::TileType::NONE,
+                                              Wordle::TileType::NONE,
+                                              Wordle::TileType::NONE,
+                                              Wordle::TileType::MISPLACED };
 
     EXPECT_EQ(result, expected) << "Expected: " << wordle.guess2emoji(expected)
                                 << " Got: " << wordle.guess2emoji(result);
 
-    result = wordle.guess("kiaat"), expected = vector<Wordle::TileType>{
+    result = wordle.guess("kiaat").result, expected = vector<Wordle::TileType>{
         Wordle::TileType::NONE, Wordle::TileType::NONE,
         Wordle::TileType::MISPLACED, Wordle::TileType::MISPLACED,
         Wordle::TileType::NONE
@@ -62,7 +64,7 @@ TEST(WORDLE, GAME_EDGE_CASES)
     EXPECT_EQ(result, expected) << "Expected: " << wordle.guess2emoji(expected)
                                 << " Got: " << wordle.guess2emoji(result);
 
-    result = wordle.guess("mahal"), expected = vector<Wordle::TileType>{
+    result = wordle.guess("mahal").result, expected = vector<Wordle::TileType>{
         Wordle::TileType::NONE, Wordle::TileType::CORRECT,
         Wordle::TileType::CORRECT, Wordle::TileType::MISPLACED,
         Wordle::TileType::NONE
@@ -71,7 +73,7 @@ TEST(WORDLE, GAME_EDGE_CASES)
     EXPECT_EQ(result, expected) << "Expected: " << wordle.guess2emoji(expected)
                                 << " Got: " << wordle.guess2emoji(result);
 
-    result = wordle.guess("shahs"), expected = vector<Wordle::TileType>{
+    result = wordle.guess("shahs").result, expected = vector<Wordle::TileType>{
         Wordle::TileType::NONE, Wordle::TileType::MISPLACED,
         Wordle::TileType::MISPLACED, Wordle::TileType::NONE,
         Wordle::TileType::NONE
@@ -80,7 +82,7 @@ TEST(WORDLE, GAME_EDGE_CASES)
     EXPECT_EQ(result, expected) << "Expected: " << wordle.guess2emoji(expected)
                                 << " Got: " << wordle.guess2emoji(result);
 
-    result = wordle.guess("bbaaa"), expected = vector<Wordle::TileType>{
+    result = wordle.guess("bbaaa").result, expected = vector<Wordle::TileType>{
         Wordle::TileType::NONE, Wordle::TileType::NONE,
         Wordle::TileType::MISPLACED, Wordle::TileType::MISPLACED,
         Wordle::TileType::NONE
@@ -89,7 +91,7 @@ TEST(WORDLE, GAME_EDGE_CASES)
     EXPECT_EQ(result, expected) << "Expected: " << wordle.guess2emoji(expected)
                                 << " Got: " << wordle.guess2emoji(result);
 
-    result = wordle.guess("aahed"), expected = vector<Wordle::TileType>{
+    result = wordle.guess("aahed").result, expected = vector<Wordle::TileType>{
         Wordle::TileType::CORRECT, Wordle::TileType::CORRECT,
         Wordle::TileType::CORRECT, Wordle::TileType::CORRECT,
         Wordle::TileType::CORRECT
@@ -102,31 +104,32 @@ TEST(WORDLE, GAME_EDGE_CASES)
 TEST(WORDLE, COUNT1)
 {
     Wordle wordle("thowl");
-    EXPECT_EQ(wordle.count(), 14855);
+    auto stat = wordle.getStat(-1);
+    EXPECT_EQ(stat.count, 14855);
 
-    wordle.guess("slate");
-    EXPECT_EQ(wordle.count(), 51);
+    stat = wordle.guess("slate");
+    EXPECT_EQ(stat.count, 51);
 
-    vector<string> result1;
-    wordle.guess("limit");
-    EXPECT_EQ(wordle.count(&result1), 11);
-    vector<string> expected1{
+    stat = wordle.guess("limit");
+    EXPECT_EQ(stat.count, 11);
+    vector<string> result = wordle.getWords(-1);
+    vector<string> expected = {
         "butyl", "hotly", "octyl", "othyl", "thowl", "thurl",
         "tolly", "tolyl", "troll", "trull", "truly",
     };
-    EXPECT_EQ(result1, expected1);
+    EXPECT_EQ(result, expected);
 
-    vector<string> result2;
-    wordle.guess("truly");
-    EXPECT_EQ(wordle.count(&result2), 1);
-    vector<string> expected2{ "thowl" };
-    EXPECT_EQ(result2, expected2);
+    stat = wordle.guess("truly");
+    EXPECT_EQ(stat.count, 1);
+    result = wordle.getWords(-1);
+    expected = { "thowl" };
+    EXPECT_EQ(result, expected);
 
-    vector<string> result3;
-    wordle.guess("thowl");
-    EXPECT_EQ(wordle.count(&result3), 1);
-    vector<string> expected3{ "thowl" };
-    EXPECT_EQ(result3, expected3);
+    stat = wordle.guess("thowl");
+    EXPECT_EQ(stat.count, 1);
+    result = wordle.getWords(-1);
+    expected = { "thowl" };
+    EXPECT_EQ(result, expected);
 
     EXPECT_TRUE(wordle.isGameOver());
     EXPECT_EQ(wordle.getStatus(), Wordle::GameStatus::WON);
@@ -135,50 +138,52 @@ TEST(WORDLE, COUNT1)
 TEST(WORDLE, COUNT2)
 {
     Wordle wordle("breys");
-    EXPECT_EQ(wordle.count(), 14855);
+    auto stat = wordle.getStat(-1);
+    EXPECT_EQ(stat.count, 14855);
 
-    wordle.guess("warns");
-    EXPECT_EQ(wordle.count(), 308);
+    stat = wordle.guess("warns");
+    EXPECT_EQ(stat.count, 308);
 
-    vector<string> result1;
-    wordle.guess("srsly");
-    EXPECT_EQ(wordle.count(&result1), 7);
-    vector<string> expected1{
+    vector<string> result;
+    stat = wordle.guess("srsly");
+    EXPECT_EQ(stat.count, 7);
+    result = wordle.getWords(-1);
+    vector<string> expected = {
         "breys", "dreys", "greys", "preys", "treys", "troys", "tryps",
     };
-    EXPECT_EQ(result1, expected1);
+    EXPECT_EQ(result, expected);
 
-    vector<string> result2;
-    wordle.guess("donas");
-    EXPECT_EQ(wordle.count(&result2), 5);
-    vector<string> expected2{
+    stat = wordle.guess("donas");
+    EXPECT_EQ(stat.count, 5);
+    result = wordle.getWords(-1);
+    expected = {
         "breys", "greys", "preys", "treys", "tryps",
     };
-    EXPECT_EQ(result2, expected2);
+    EXPECT_EQ(result, expected);
 
-    vector<string> result3;
-    wordle.guess("mynah");
-    EXPECT_EQ(wordle.count(&result3), 5);
-    vector<string> expected3{
+    stat = wordle.guess("mynah");
+    EXPECT_EQ(stat.count, 5);
+    result = wordle.getWords(-1);
+    expected = {
         "breys", "greys", "preys", "treys", "tryps",
     };
-    EXPECT_EQ(result3, expected3);
+    EXPECT_EQ(result, expected);
 
-    vector<string> result4;
-    wordle.guess("treys");
-    EXPECT_EQ(wordle.count(&result4), 3);
-    vector<string> expected4{
+    stat = wordle.guess("treys");
+    EXPECT_EQ(stat.count, 3);
+    result = wordle.getWords(-1);
+    expected = {
         "breys",
         "greys",
         "preys",
     };
-    EXPECT_EQ(result4, expected4);
+    EXPECT_EQ(result, expected);
 
-    vector<string> result5;
-    wordle.guess("breys");
-    EXPECT_EQ(wordle.count(&result5), 1);
-    vector<string> expected5{ "breys" };
-    EXPECT_EQ(result5, expected5);
+    stat = wordle.guess("breys");
+    EXPECT_EQ(stat.count, 1);
+    result = wordle.getWords(-1);
+    expected = { "breys" };
+    EXPECT_EQ(result, expected);
 
     EXPECT_TRUE(wordle.isGameOver());
     EXPECT_EQ(wordle.getStatus(), Wordle::GameStatus::WON);
@@ -187,39 +192,40 @@ TEST(WORDLE, COUNT2)
 TEST(WORDLE, COUNT3)
 {
     Wordle wordle("bribe");
-    EXPECT_EQ(wordle.count(), 14855);
+    auto stat = wordle.getStat(-1);
+    EXPECT_EQ(stat.count, 14855);
 
-    wordle.guess("query");
-    EXPECT_EQ(wordle.count(), 1223);
+    stat = wordle.guess("query");
+    EXPECT_EQ(stat.count, 1223);
 
-    wordle.guess("twier");
-    EXPECT_EQ(wordle.count(), 45);
+    stat = wordle.guess("twier");
+    EXPECT_EQ(stat.count, 45);
 
-    vector<string> result1;
-    wordle.guess("rhine");
-    EXPECT_EQ(wordle.count(&result1), 24);
-    vector<string> expected1{
+    stat = wordle.guess("rhine");
+    EXPECT_EQ(stat.count, 24);
+    vector<string> result = wordle.getWords(-1);
+    vector<string> expected = {
         "arise", "bribe", "bride", "brise", "brize", "crime", "cripe", "crise",
         "drice", "drive", "frise", "frize", "grice", "gride", "grike", "grime",
         "gripe", "grise", "grize", "price", "pride", "prime", "prise", "prize",
     };
-    EXPECT_EQ(result1, expected1);
+    EXPECT_EQ(result, expected);
 
-    vector<string> result2;
-    wordle.guess("arise");
-    EXPECT_EQ(wordle.count(&result2), 18);
-    vector<string> expected2{
+    stat = wordle.guess("arise");
+    EXPECT_EQ(stat.count, 18);
+    result = wordle.getWords(-1);
+    expected = {
         "bribe", "bride", "brize", "crime", "cripe", "drice",
         "drive", "frize", "grice", "gride", "grike", "grime",
         "gripe", "grize", "price", "pride", "prime", "prize",
     };
-    EXPECT_EQ(result2, expected2);
+    EXPECT_EQ(result, expected);
 
-    vector<string> result3;
-    wordle.guess("bribe");
-    EXPECT_EQ(wordle.count(&result3), 1);
-    vector<string> expected3{ "bribe" };
-    EXPECT_EQ(result3, expected3);
+    stat = wordle.guess("bribe");
+    EXPECT_EQ(stat.count, 1);
+    result = wordle.getWords(-1);
+    expected = { "bribe" };
+    EXPECT_EQ(result, expected);
 
     EXPECT_TRUE(wordle.isGameOver());
     EXPECT_EQ(wordle.getStatus(), Wordle::GameStatus::WON);
@@ -258,11 +264,11 @@ TEST(TRIE, COUNT)
     EXPECT_EQ(trie.count(query1), 12);
 
     query1.exclude('s');
-    vector<string> result1;
-    EXPECT_EQ(trie.count(query1, &result1), 8);
-    vector<string> expected1{ "cabal", "kabab", "kabar", "maban",
-                              "nabam", "nawab", "rabat", "tabac" };
-    EXPECT_EQ(result1, expected1);
+    vector<string> result;
+    EXPECT_EQ(trie.count(query1, &result), 8);
+    vector<string> expected{ "cabal", "kabab", "kabar", "maban",
+                             "nabam", "nawab", "rabat", "tabac" };
+    EXPECT_EQ(result, expected);
 
     auto query2 = trie.query();
     query2.setCorrect('e', 1);
@@ -275,17 +281,16 @@ TEST(TRIE, COUNT)
     EXPECT_EQ(trie.count(query2), 53);
 
     query2.exclude("id");
-    vector<string> result2;
-    EXPECT_EQ(trie.count(query2, &result2), 45);
-    vector<string> expected2{
-        "beast", "beath", "beaty", "beaut", "begat", "bepat", "besat", "feart",
-        "feast", "fetal", "heart", "heast", "heath", "heaty", "leant", "leapt",
-        "least", "meant", "meath", "meaty", "metal", "neant", "neath", "neato",
-        "peart", "peaty", "petal", "petar", "react", "reast", "reate", "repat",
-        "resat", "retag", "retam", "retax", "setae", "setal", "teach", "teary",
-        "tease", "teaze", "telae", "tepal", "yeast"
-    };
-    EXPECT_EQ(result2, expected2);
+    result.clear();
+    EXPECT_EQ(trie.count(query2, &result), 45);
+    expected = { "beast", "beath", "beaty", "beaut", "begat", "bepat", "besat",
+                 "feart", "feast", "fetal", "heart", "heast", "heath", "heaty",
+                 "leant", "leapt", "least", "meant", "meath", "meaty", "metal",
+                 "neant", "neath", "neato", "peart", "peaty", "petal", "petar",
+                 "react", "reast", "reate", "repat", "resat", "retag", "retam",
+                 "retax", "setae", "setal", "teach", "teary", "tease", "teaze",
+                 "telae", "tepal", "yeast" };
+    EXPECT_EQ(result, expected);
 }
 
 TEST(TRIE, NTH_WORD)

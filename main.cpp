@@ -1,3 +1,4 @@
+#include <iomanip>
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -18,12 +19,15 @@ int main()
         cout << "GUESS " << wordle.getGuesses() + 1 << "/"
              << wordle.getMaxGuesses() << endl;
         // cout << "TARGET WORD: " << wordle.getTargetWord() << endl;
-        int cnt = wordle.count();
-        cout << "REMAINING POSSIBILITIES: " << cnt << endl;
-        if (cnt <= 50)
+        auto stat = wordle.getStat(-1);
+        cout << "REMAINING WORDS:       " << stat.count << endl
+             << "INFORMATION GAINED:    " << fixed << setprecision(2)
+             << stat.bits << " bits" << endl
+             << "REMAINING INFORMATION: " << fixed << setprecision(2)
+             << stat.remainingBits << " bits" << endl;
+        if (stat.count <= 50)
         {
-            vector<string> result;
-            wordle.count(&result);
+            vector<string> result = wordle.getWords(-1);
             cout << "POSSIBILITIES: {";
             for (auto &word : result) cout << '"' << word << "\", ";
             cout << "}" << endl;
@@ -40,7 +44,7 @@ int main()
             continue;
         }
 
-        cout << wordle.guess2emoji(wordle.guess(guess)) << endl;
+        cout << wordle.guess2emoji(wordle.guess(guess).result) << endl;
     }
 
     switch (wordle.getStatus())
