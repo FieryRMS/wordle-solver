@@ -1,4 +1,3 @@
-#include <iomanip>
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -13,27 +12,13 @@ int main()
     SetConsoleOutputCP(CP_UTF8);
 #endif
     Wordle wordle;
+    auto stat = wordle.getStat(-1);
+    stat.print();
 
     while (!wordle.isGameOver())
     {
-        cout << "GUESS " << wordle.getGuesses() + 1 << "/"
-             << wordle.getMaxGuesses() << endl;
-        // cout << "TARGET WORD: " << wordle.getTargetWord() << endl;
-        auto stat = wordle.getStat(-1);
-        cout << "REMAINING WORDS:       " << stat.count << endl
-             << "INFORMATION GAINED:    " << fixed << setprecision(2) << setw(5)
-             << stat.bits << " bits" << endl
-             << "REMAINING INFORMATION: " << fixed << setprecision(2) << setw(5)
-             << stat.remainingBits << " bits" << endl;
-        if (stat.count <= 50)
-        {
-            vector<string> result = wordle.getWords(-1);
-            cout << "POSSIBILITIES: {";
-            for (auto &word : result) cout << '"' << word << "\", ";
-            cout << "}" << endl;
-        }
         string guess;
-        cout << "Enter your guess: ";
+        cout << "\nEnter your guess: ";
         cin >> guess;
 
         for (auto &c : guess) c = tolower(c);
@@ -43,8 +28,15 @@ int main()
             cout << "Invalid word!" << endl;
             continue;
         }
-
-        cout << wordle.guess2emoji(wordle.guess(guess).result) << endl;
+        stat = wordle.guess(guess);
+        stat.print();
+        if (stat.count <= 50)
+        {
+            vector<string> result = wordle.getWords(-1);
+            cout << "POSSIBILITIES: {";
+            for (auto &word : result) cout << '"' << word << "\", ";
+            cout << "}" << endl;
+        }
     }
 
     switch (wordle.getStatus())

@@ -24,13 +24,17 @@ class Wordle {
    private:
     static const size_t N = 5;
     struct Stat {
-        string guess = "";
-        vector<TileType> result = {};
-        int count = 0;
-        double bits = 0;
-        double remainingBits = 0;
+        string guess;
+        vector<TileType> result;
+        int count;
+        double patternProb;
+        double bits;
+        double expectedBits;
+        double remainingBits;
         Trie<N>::Query query;
         bool valid = false;
+
+        void print() const;
     };
 
    public:
@@ -50,6 +54,7 @@ class Wordle {
     string getTargetWord() const { return targetWord; }
     GameStatus getStatus() const { return status; }
     vector<string> getWords(int i) const;
+    double getExpectedBits(int i, string guess) const;
 
     // Setters
     void setTargetWord(const string &word) { targetWord = word; }

@@ -1,9 +1,11 @@
 #include "wordle.h"
 #include <cmath>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <random>
 #include <string>
+
 using namespace std;
 
 const string filepath = "res/wordle/words";
@@ -38,7 +40,12 @@ Wordle::Wordle(const string &targetWord)
     int count = wordlist.count("");
 
     stats.push_back({
+        .guess = "",
+        .result = {},
         .count = count,
+        .patternProb = 0,
+        .bits = 0,
+        .expectedBits = 0,
         .remainingBits = log2(count),
         .query = wordlist.query(""),
         .valid = true,
@@ -62,7 +69,15 @@ Wordle::Stat Wordle::guess(const string &guess)
     // return invalid stat
     if (isGameOver())
         return Stat({
+            .guess = guess,
+            .result = {},
+            .count = 0,
+            .patternProb = 0,
+            .bits = 0,
+            .expectedBits = 0,
+            .remainingBits = 0,
             .query = wordlist.query(""),
+            .valid = false,
         });
 
     vector<TileType> result(N, TileType::WRONG);
@@ -100,14 +115,16 @@ Wordle::Stat Wordle::guess(const string &guess)
     auto query = getUpdatedQuery(guess, result, stats.back().query);
     int count = wordlist.count(query), prevCount = stats.back().count;
 
-    // Information = log2(1 / P(x)) = - log2(P(x)) = - log2(count / prevCount)
+    // Information = log2(1 / P(x)) = - log2(P(x)) = - log2(count / prevCount) = log2(prevCount) - log2(count)
     double bits = log2(prevCount) - log2(count);
 
     stats.push_back({
         .guess = guess,
         .result = result,
         .count = count,
+        .patternProb = (double)count / prevCount,
         .bits = bits,
+        .expectedBits = getExpectedBits(-1, guess),
         .remainingBits = log2(count),
         .query = query,
         .valid = true,
@@ -181,4 +198,41 @@ vector<string> Wordle::getWords(int i) const
     vector<string> result;
     wordlist.count(getStat(i).query, &result);
     return result;
+}
+
+double Wordle::getExpectedBits(int i, string guess) const
+{
+    auto stat = getStat(i);
+    auto patterns = wordlist.getPatternsCounts(guess, stat.query);
+    int total = stat.count;
+    // E = sum P(x) * log2(1 / P(x)) where x is the pattern
+    // log2(1 / P(x)) = - log2(P(x)) = - log2(count / total) = log2(total) - log2(count)
+    double expectedBits = 0;
+    for (auto &pattern : patterns)
+    {
+        double prob = (double)pattern.second / total;
+        expectedBits += prob * (log2(total) - log2(pattern.second));
+    }
+    return expectedBits;
+}
+void Wordle::Stat::print() const
+{
+    if (!valid)
+    {
+        cout << "Invalid stat" << endl;
+        return;
+    }
+    const int col1 = 23, col2 = 5;
+
+    cout << setw(col1) << "GUESS: " << guess << endl;
+    cout << setw(col1) << "PATTERN: " << guess2emoji(result) << endl;
+    cout << setw(col1) << "REMAINING WORDS: " << setw(col2) << count << endl;
+    cout << setw(col1) << "PATTERN PROBABILITY: " << setw(col2) << fixed
+         << setprecision(2) << patternProb << endl;
+    cout << setw(col1) << "INFORMATION GAINED: " << setw(col2) << fixed
+         << setprecision(2) << bits << " bits" << endl;
+    cout << setw(col1) << "EXPECTED GAIN: " << setw(col2) << fixed
+         << setprecision(2) << expectedBits << " bits" << endl;
+    cout << setw(col1) << "REMAINING INFORMATION: " << setw(col2) << fixed
+         << setprecision(2) << remainingBits << " bits" << endl;
 }
