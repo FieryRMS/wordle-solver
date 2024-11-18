@@ -10,8 +10,9 @@ class Wordle {
    public:
     enum class TileType {
         CORRECT,
-        NONE,
+        WRONG,
         MISPLACED,
+        NONE,
     };
 
     enum class GameStatus {

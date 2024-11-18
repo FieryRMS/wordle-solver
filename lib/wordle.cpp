@@ -65,7 +65,7 @@ Wordle::Stat Wordle::guess(const string &guess)
             .query = wordlist.query(""),
         });
 
-    vector<TileType> result(N, TileType::NONE);
+    vector<TileType> result(N, TileType::WRONG);
     vector<bool> visited(N, false);
 
     // check for correct letters
@@ -133,9 +133,11 @@ string Wordle::guess2emoji(const vector<TileType> &result)
             case TileType::MISPLACED:
                 emojis += "🟨";
                 break;
-            case TileType::NONE:
+            case TileType::WRONG:
                 emojis += "🟥";
                 break;
+            default:
+                emojis += "⬜";
         }
     }
     return emojis;
@@ -157,9 +159,11 @@ Trie<Wordle::N>::Query Wordle::getUpdatedQuery(const string &guess,
                 query.setMisplaced(guess[i], i);
                 includes += guess[i];
                 break;
-            case TileType::NONE:
+            case TileType::WRONG:
                 query.exclude(guess[i]);
                 break;
+            default:
+                throw invalid_argument("Invalid tile type");
         }
     }
     query.include(includes);

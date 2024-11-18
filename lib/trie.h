@@ -53,7 +53,12 @@ class Trie {
     };
 
     // including from Wordle.h causes circular dependency, so I just copy paste ¯\_(ツ)_/¯
-    enum TileType { CORRECT = 'C', WRONG = 'W', MISPLACED = 'M', NONE = '.' };
+    enum TileType {
+        CORRECT = 'C',
+        WRONG = 'W',
+        MISPLACED = 'M',
+        NONE = '.',
+    };
 
     Node *root;
     static int index(const char &c);
