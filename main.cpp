@@ -21,9 +21,9 @@ int main()
         // cout << "TARGET WORD: " << wordle.getTargetWord() << endl;
         auto stat = wordle.getStat(-1);
         cout << "REMAINING WORDS:       " << stat.count << endl
-             << "INFORMATION GAINED:    " << fixed << setprecision(2)
+             << "INFORMATION GAINED:    " << fixed << setprecision(2) << setw(5)
              << stat.bits << " bits" << endl
-             << "REMAINING INFORMATION: " << fixed << setprecision(2)
+             << "REMAINING INFORMATION: " << fixed << setprecision(2) << setw(5)
              << stat.remainingBits << " bits" << endl;
         if (stat.count <= 50)
         {

@@ -1,9 +1,10 @@
 #pragma once
-#include <cstddef>
+#include <map>
 #include <string>
 #include <vector>
 
 using namespace std;
+
 template <size_t N>
 class Trie {
    public:
@@ -34,6 +35,8 @@ class Trie {
     void insert(const string &word);
     int count(Query query, vector<string> *result = nullptr) const;
     int count(const string &word) const;
+    map<string, int> getPatternsCounts(const string &word,
+                                       const Query &SampleSpace) const;
     string getNthWord(int n) const;
     Query query(const string s = "") const;
 
@@ -49,12 +52,19 @@ class Trie {
         ~Node();
     };
 
+    // including from Wordle.h causes circular dependency, so I just copy paste ¯\_(ツ)_/¯
+    enum TileType { CORRECT = 'C', WRONG = 'W', MISPLACED = 'M', NONE = '.' };
+
     Node *root;
     static int index(const char &c);
     int _count(Query &query,
                Node *node,
                vector<string> *result,
                string *word = nullptr,
+               string *guess = nullptr,
+               vector<int> (*guessLetters)[26] = nullptr,
+               map<string, int> *memo = nullptr,
+               string *pattern = nullptr,
                int idx = 0) const;
 };
 
