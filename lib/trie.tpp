@@ -240,7 +240,7 @@ void Trie<N>::Query::setMisplaced(const char &c, const int &idx)
  *
  * @tparam N
  * @param query
- * @param result
+ * @param result provide if you want to store the words
  * @return int
  */
 template <size_t N>
@@ -261,8 +261,8 @@ int Trie<N>::_count(
     string *word,
 
     // provide the below params if you want to calculate patterns
-    string *guess,
-    vector<int> (*guessLetters)[26],
+    const string *guess,
+    set<int> (*guessLetters)[26],
     map<string, int> *memo,
     string *pattern,
 
@@ -295,7 +295,7 @@ int Trie<N>::_count(
             query.includes[i]--, query.includesCount--, flag = true;
         if (word) (*word)[idx] = 'a' + i;
 
-        int poppedGuessLetter = -1;
+        int removedIdx = -1;
         char prevPattern = -1, prevMissPattern = -1;
         // do we need to check the pattern?
         if (guess && guessLetters && pattern)
@@ -305,12 +305,12 @@ int Trie<N>::_count(
             // if the current letter is the same, correct
             if ((*guess)[idx] == 'a' + i)
             {
-                // remove from guessLetters (should be at the end) if never assigned
+                // remove from guessLetters if never assigned
                 // we remove it so that the misplaced logic doesnt overwrite it
                 if ((*pattern)[idx] == TileType::NONE)
                 {
-                    poppedGuessLetter = (*guessLetters)[i].back();
-                    (*guessLetters)[i].pop_back();
+                    removedIdx = idx;
+                    (*guessLetters)[i].erase(idx);
                 }
                 // it was previously assigned by misplaced, so we need to check again
                 else checkMissplaced = true;
@@ -319,20 +319,22 @@ int Trie<N>::_count(
             }
             else
             {
-                // if never assigned, mark it as wrong, check for missplaced
+                // if never assigned, mark it as wrong
                 if ((*pattern)[idx] == TileType::NONE)
-                    (*pattern)[idx] = TileType::WRONG, checkMissplaced = true;
+                    (*pattern)[idx] = TileType::WRONG;
                 // else ignore, it was previously assigned by misplaced
+                // check if the current word letter is misplaced
+                checkMissplaced = true;
             }
 
-            // is it in the guess?
+            // is the letter in the guess?
             if (checkMissplaced && !(*guessLetters)[i].empty())
             {
-                int missIdx = (*guessLetters)[i].back();
-                poppedGuessLetter = missIdx;
+                int missIdx = *(*guessLetters)[i].begin();
+                removedIdx = missIdx;
                 prevMissPattern = (*pattern)[missIdx];
                 (*pattern)[missIdx] = TileType::MISPLACED;
-                (*guessLetters)[i].pop_back();
+                (*guessLetters)[i].erase(missIdx);
             }
         }
 
@@ -344,10 +346,9 @@ int Trie<N>::_count(
         if (word) (*word)[idx] = '.';
         if (flag) query.includes[i]++, query.includesCount++, flag = false;
 
-        if (poppedGuessLetter != -1 && prevMissPattern != -1)
-            (*pattern)[poppedGuessLetter] = prevMissPattern;
-        if (poppedGuessLetter != -1)
-            (*guessLetters)[i].push_back(poppedGuessLetter);
+        if (removedIdx != -1 && prevMissPattern != -1)
+            (*pattern)[removedIdx] = prevMissPattern;
+        if (removedIdx != -1) (*guessLetters)[i].insert(removedIdx);
         if (prevPattern != -1) (*pattern)[idx] = prevPattern;
     }
 
@@ -388,15 +389,16 @@ void Trie<N>::Query::print() const
 
 template <size_t N>
 map<string, int> Trie<N>::getPatternsCounts(const string &guess,
-                                            const Query &SampleSpace) const
+                                            Query &SampleSpace) const
 {
     map<string, int> memo;
     string pattern(N, TileType::NONE);
-    vector<int> guessLetters[26];
+    set<int> guessLetters[26];
+    string word(N, '.');
 
-    for (int i = N - 1; i >= 0; i--) guessLetters[index(guess[i])].push_back(i);
+    for (int i = N - 1; i >= 0; i--) guessLetters[index(guess[i])].insert(i);
 
-    _count(SampleSpace, root, nullptr, nullptr, &guess, &guessLetters, &memo,
+    _count(SampleSpace, root, nullptr, &word, &guess, &guessLetters, &memo,
            &pattern);
     return memo;
 }

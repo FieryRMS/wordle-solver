@@ -313,3 +313,167 @@ TEST(TRIE, NTH_WORD)
     EXPECT_EQ(trie.getNthWord(12345), "state");
     EXPECT_EQ(trie.getNthWord(14855), "zymic");
 }
+TEST(TRIE, PATTERNCOUNTS1)
+{
+    string guess = "camus";
+    vector<string> words = { "beisa", "fossa", "plush", "queck",
+                             "rossa", "sputa", "squad", "camus" };
+    Trie<5> trie;
+    for (auto &w : words) trie.insert(w);
+    auto query = trie.query("");
+    auto result = trie.getPatternsCounts(guess, query);
+    map<string, int> expected = {
+        { "CCCCC", 1 }, { "MWWMW", 1 }, { "WMWMM", 2 },
+        { "WMWWM", 3 }, { "WWWMM", 1 },
+    };
+    EXPECT_EQ(result, expected);
+}
+
+TEST(TRIE, PATTERNCOUNTS2)
+{
+    string guess = "goory";
+    vector<string> words = { "snool", "goory" };
+    Trie<5> trie;
+    for (auto &w : words) trie.insert(w);
+    auto query = trie.query("");
+    auto result = trie.getPatternsCounts(guess, query);
+    map<string, int> expected = {
+        { "CCCCC", 1 },
+        { "WMCWW", 1 },
+    };
+    EXPECT_EQ(result, expected);
+}
+
+TEST(TRIE, PATTERNCOUNTS3)
+{
+    ifstream file(filepath);
+    ASSERT_TRUE(file.is_open());
+
+    string word;
+    Trie<5> trie;
+    while (file >> word) trie.insert(word);
+
+    auto query = trie.query("");
+    auto result = trie.getPatternsCounts("aband", query);
+
+    map<string, int> expected{
+        { "CCCCC", 1 },    { "CCCWW", 13 },  { "CCMCW", 1 },
+        { "CCMWC", 1 },    { "CCMWW", 8 },   { "CCWCW", 2 },
+        { "CCWMW", 5 },    { "CCWWC", 4 },   { "CCWWM", 2 },
+        { "CCWWW", 33 },   { "CMCWW", 1 },   { "CMMMW", 1 },
+        { "CMMWW", 6 },    { "CMWWC", 1 },   { "CMWWM", 6 },
+        { "CMWWW", 10 },   { "CWCCC", 1 },   { "CWCCW", 9 },
+        { "CWCMM", 1 },    { "CWCMW", 4 },   { "CWCWC", 4 },
+        { "CWCWM", 6 },    { "CWCWW", 58 },  { "CWMCW", 2 },
+        { "CWMMM", 2 },    { "CWMMW", 28 },  { "CWMWC", 6 },
+        { "CWMWM", 8 },    { "CWMWW", 105 }, { "CWWCC", 2 },
+        { "CWWCM", 1 },    { "CWWCW", 42 },  { "CWWMC", 3 },
+        { "CWWMM", 10 },   { "CWWMW", 75 },  { "CWWWC", 39 },
+        { "CWWWM", 51 },   { "CWWWW", 316 }, { "MCWCW", 1 },
+        { "MCWWW", 5 },    { "MMCCW", 1 },   { "MMCWC", 1 },
+        { "MMCWM", 1 },    { "MMCWW", 6 },   { "MMMMM", 1 },
+        { "MMMMW", 10 },   { "MMMWM", 3 },   { "MMMWW", 47 },
+        { "MMWCW", 10 },   { "MMWMC", 1 },   { "MMWMM", 3 },
+        { "MMWMW", 54 },   { "MMWWC", 14 },  { "MMWWM", 22 },
+        { "MMWWW", 319 },  { "MWCCM", 1 },   { "MWCCW", 14 },
+        { "MWCMW", 4 },    { "MWCWC", 2 },   { "MWCWM", 4 },
+        { "MWCWW", 62 },   { "MWMCM", 1 },   { "MWMCW", 13 },
+        { "MWMMC", 3 },    { "MWMMM", 6 },   { "MWMMW", 79 },
+        { "MWMWC", 3 },    { "MWMWM", 30 },  { "MWMWW", 301 },
+        { "MWWCC", 2 },    { "MWWCM", 14 },  { "MWWCW", 109 },
+        { "MWWMC", 26 },   { "MWWMM", 67 },  { "MWWMW", 508 },
+        { "MWWWC", 161 },  { "MWWWM", 287 }, { "MWWWW", 2005 },
+        { "WCCCW", 2 },    { "WCCWM", 1 },   { "WCCWW", 5 },
+        { "WCWCW", 3 },    { "WCWWC", 2 },   { "WCWWW", 19 },
+        { "WMCCC", 2 },    { "WMCCW", 10 },  { "WMCMW", 5 },
+        { "WMCWC", 5 },    { "WMCWM", 9 },   { "WMCWW", 88 },
+        { "WMWCC", 5 },    { "WMWCW", 39 },  { "WMWMC", 3 },
+        { "WMWMM", 12 },   { "WMWMW", 89 },  { "WMWWC", 50 },
+        { "WMWWM", 74 },   { "WMWWW", 704 }, { "WWCCC", 7 },
+        { "WWCCM", 7 },    { "WWCCW", 114 }, { "WWCMM", 4 },
+        { "WWCMW", 77 },   { "WWCWC", 32 },  { "WWCWM", 101 },
+        { "WWCWW", 711 },  { "WWWCC", 31 },  { "WWWCM", 27 },
+        { "WWWCW", 411 },  { "WWWMC", 61 },  { "WWWMM", 175 },
+        { "WWWMW", 1063 }, { "WWWWC", 401 }, { "WWWWM", 746 },
+        { "WWWWW", 4691 }
+    };
+
+    ASSERT_EQ(result.size(), expected.size());
+
+    // too big to compare and show the difference, break it down
+    const int limit = 20;
+    vector<map<string, int>> result_parts;
+    vector<map<string, int>> expected_parts;
+    auto itr = result.begin(), ite = expected.begin();
+    while (itr != result.end())
+    {
+        map<string, int> r, e;
+        for (int i = 0; i < limit && itr != result.end(); i++, itr++, ite++)
+            r.insert(*itr), e.insert(*ite);
+
+        result_parts.push_back(r);
+        expected_parts.push_back(e);
+    }
+
+    for (int i = 0; i < result_parts.size(); i++)
+    {
+        EXPECT_EQ(result_parts[i], expected_parts[i])
+            << "OFFSET: " << i * limit;
+    }
+}
+
+TEST(TRIE, PATTERNCOUNTS4)
+{
+    ifstream file(filepath);
+    ASSERT_TRUE(file.is_open());
+
+    string word;
+    Trie<5> trie;
+    while (file >> word) trie.insert(word);
+
+    auto query = trie.query("");
+    auto result = trie.getPatternsCounts("annan", query);
+
+    map<string, int> expected{
+        { "CCCCC", 1 },   { "CCCCW", 3 },   { "CCCWW", 5 },   { "CCMMW", 1 },
+        { "CCMWW", 1 },   { "CCWCW", 9 },   { "CCWMW", 4 },   { "CCWWC", 3 },
+        { "CCWWW", 31 },  { "CMWMW", 13 },  { "CMWWW", 46 },  { "CWCCW", 1 },
+        { "CWCMW", 3 },   { "CWCWW", 14 },  { "CWWCC", 11 },  { "CWWCW", 94 },
+        { "CWWMC", 4 },   { "CWWMW", 122 }, { "CWWWC", 40 },  { "CWWWW", 462 },
+        { "MCMMW", 1 },   { "MCMWW", 1 },   { "MCWWC", 1 },   { "MCWWW", 53 },
+        { "MMCCW", 1 },   { "MMCMM", 1 },   { "MMCMW", 6 },   { "MMCWM", 2 },
+        { "MMCWW", 35 },  { "MMMMW", 2 },   { "MMMWW", 3 },   { "MMWCW", 21 },
+        { "MMWMW", 33 },  { "MMWWC", 1 },   { "MMWWW", 356 }, { "MWCCW", 18 },
+        { "MWCMW", 25 },  { "MWCWC", 2 },   { "MWCWW", 240 }, { "MWWCC", 25 },
+        { "MWWCW", 227 }, { "MWWMW", 233 }, { "MWWWC", 112 }, { "MWWWW", 3074 },
+        { "WCCWW", 7 },   { "WCWCC", 3 },   { "WCWCW", 27 },  { "WCWWC", 15 },
+        { "WCWWW", 222 }, { "WMCCC", 1 },   { "WMCCW", 1 },   { "WMCWC", 1 },
+        { "WMCWM", 4 },   { "WMCWW", 69 },  { "WMMWW", 11 },  { "WMWCW", 33 },
+        { "WMWWC", 9 },   { "WMWWW", 677 }, { "WWCCC", 1 },   { "WWCCW", 57 },
+        { "WWCWC", 11 },  { "WWCWW", 610 }, { "WWWCC", 94 },  { "WWWCW", 691 },
+        { "WWWWC", 283 }, { "WWWWW", 6687 }
+    };
+
+    ASSERT_EQ(result.size(), expected.size());
+
+    // too big to compare and show the difference, break it down
+    const int limit = 20;
+    vector<map<string, int>> result_parts;
+    vector<map<string, int>> expected_parts;
+    auto itr = result.begin(), ite = expected.begin();
+    while (itr != result.end())
+    {
+        map<string, int> r, e;
+        for (int i = 0; i < limit && itr != result.end(); i++, itr++, ite++)
+            r.insert(*itr), e.insert(*ite);
+
+        result_parts.push_back(r);
+        expected_parts.push_back(e);
+    }
+
+    for (int i = 0; i < result_parts.size(); i++)
+    {
+        EXPECT_EQ(result_parts[i], expected_parts[i])
+            << "OFFSET: " << i * limit;
+    }
+}

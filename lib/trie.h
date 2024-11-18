@@ -2,6 +2,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <set>
 
 using namespace std;
 
@@ -36,7 +37,7 @@ class Trie {
     int count(Query query, vector<string> *result = nullptr) const;
     int count(const string &word) const;
     map<string, int> getPatternsCounts(const string &word,
-                                       const Query &SampleSpace) const;
+                                       Query &SampleSpace) const;
     string getNthWord(int n) const;
     Query query(const string s = "") const;
 
@@ -66,8 +67,8 @@ class Trie {
                Node *node,
                vector<string> *result,
                string *word = nullptr,
-               string *guess = nullptr,
-               vector<int> (*guessLetters)[26] = nullptr,
+               const string *guess = nullptr,
+               set<int> (*guessLetters)[26] = nullptr,
                map<string, int> *memo = nullptr,
                string *pattern = nullptr,
                int idx = 0) const;
