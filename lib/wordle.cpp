@@ -5,6 +5,7 @@
 #include <iostream>
 #include <random>
 #include <string>
+#include "ProgressBar.h"
 
 using namespace std;
 
@@ -279,11 +280,11 @@ vector<pair<double, string>> Wordle::getTopNWords(int n, bool showProgress)
     // we know that entropy can never be more than the previous entropy,
     // therefore best case senario new=prev
     // So we can skip when we have 10 elements, and the smallest element is > next elements old entropy
-    double progress = 0;
+    ProgressBar progressBar(wordlist.size(), 70);
     if (showProgress)
     {
         cout << "Pre-calculating entropy..." << endl;
-        updateProgressbar(progress);
+        progressBar.update(0);
     }
     set<pair<double, string>> topWords;
     auto word = wordlist.begin();
@@ -300,21 +301,12 @@ vector<pair<double, string>> Wordle::getTopNWords(int n, bool showProgress)
         }
         else break;
 
-        if (showProgress)
-        {
-            progress = (double)i / wordlist.size();
-            updateProgressbar(progress);
-        }
+        if (showProgress) progressBar.update(i);
     }
     // we dont need to sort rest of the words, since already sorted
     sort(wordlist.begin(), word, greater<pair<double, string>>());
 
-    if (showProgress)
-    {
-        progress = 1;
-        updateProgressbar(progress);
-        cout << endl;
-    }
+    if (showProgress) progressBar.finish();
 
     return vector<pair<double, string>>(wordlist.begin(), wordlist.begin() + n);
 }
@@ -335,19 +327,4 @@ void Wordle::printTopNWords(int n)
     for (auto &word : topWords)
         cout << setw(titleWidth) << "" << word.second << " | " << setw(numWidth)
              << fixed << setprecision(2) << word.first << endl;
-}
-
-void Wordle::updateProgressbar(double progress) const
-{
-    const int barWidth = 70;
-    cout << "[";
-    int pos = barWidth * progress;
-    for (int i = 0; i < barWidth; ++i)
-    {
-        if (i < pos) cout << "=";
-        else if (i == pos) cout << ">";
-        else cout << " ";
-    }
-    cout << "] " << int(progress * 100.0) << " %\r";
-    cout.flush();
 }

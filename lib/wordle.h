@@ -67,7 +67,6 @@ class Wordle {
                                    const vector<TileType> &result,
                                    Trie<N>::Query query);
 
-    void updateProgressbar(double progress) const;
 
     string targetWord;
     int guesses;
