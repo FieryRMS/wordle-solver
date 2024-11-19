@@ -14,12 +14,15 @@ int main()
     Wordle wordle;
     auto stat = wordle.getStat(-1);
     stat.print();
+    wordle.printTopNWords(10);
 
     while (!wordle.isGameOver())
     {
         string guess;
         cout << "\nEnter your guess: ";
         cin >> guess;
+        cin.ignore();
+        cin.clear();
 
         for (auto &c : guess) c = tolower(c);
 
@@ -30,13 +33,8 @@ int main()
         }
         stat = wordle.guess(guess);
         stat.print();
-        if (stat.count <= 50)
-        {
-            vector<string> result = wordle.getWords(-1);
-            cout << "POSSIBILITIES: {";
-            for (auto &word : result) cout << '"' << word << "\", ";
-            cout << "}" << endl;
-        }
+        if (stat.count <= 50) wordle.printPossibleWords();
+        wordle.printTopNWords(10);
     }
 
     switch (wordle.getStatus())

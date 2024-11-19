@@ -46,6 +46,8 @@ class Wordle {
     Stat guess(const string &guess);
     static string guess2emoji(const vector<TileType> &result);
     bool isGameOver() const { return status != GameStatus::ONGOING; }
+    void printPossibleWords() const;
+    void printTopNWords(int n);
 
     // Getters
     int getGuesses() const { return guesses; }
@@ -54,7 +56,8 @@ class Wordle {
     string getTargetWord() const { return targetWord; }
     GameStatus getStatus() const { return status; }
     vector<string> getWords(int i) const;
-    double getExpectedBits(int i, string guess) const;
+    double getEntropy(int i, string guess) const;
+    vector<pair<double, string>> getTopNWords(int n, bool showProgress = false);
 
     // Setters
     void setTargetWord(const string &word) { targetWord = word; }
@@ -63,10 +66,14 @@ class Wordle {
     Trie<N>::Query getUpdatedQuery(const string &guess,
                                    const vector<TileType> &result,
                                    Trie<N>::Query query);
+
+    void updateProgressbar(double progress) const;
+
     string targetWord;
     int guesses;
     static const int maxGuesses = 6;
     GameStatus status;
-    Trie<N> wordlist;
+    Trie<N> wordTrie;
     vector<Stat> stats;
+    vector<pair<double, string>> wordlist;
 };

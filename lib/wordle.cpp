@@ -8,36 +8,59 @@
 
 using namespace std;
 
+const int titleWidth = 23, numWidth = 5;
 const string filepath = "res/wordle/words";
+const string EntropyCache = "temp_entropy_cache.txt";
 
 Wordle::Wordle() : Wordle("")
 {
     // choose a random word from the list
     random_device rd;
     mt19937 gen(rd());
-    uniform_int_distribution<> dis(1, wordlist.count(""));
-    targetWord = wordlist.getNthWord(dis(gen));
+    uniform_int_distribution<> dis(1, wordTrie.count(""));
+    targetWord = wordTrie.getNthWord(dis(gen));
 }
 
 Wordle::Wordle(const string &targetWord)
     : targetWord(targetWord),
       guesses(0),
       status(GameStatus::ONGOING),
-      wordlist()
+      wordTrie()
 {
     stats.reserve(maxGuesses + 1);
-    ifstream file(filepath);
-    if (!file.is_open())
+
+    // check if cache exists
+    ifstream cache_in(EntropyCache);
+    if (cache_in.is_open())
     {
-        cerr << "Error opening file: " << filepath << endl;
-        exit(1);
+        string word;
+        double entropy;
+        while (cache_in >> word >> entropy)
+        {
+            wordTrie.insert(word);
+            wordlist.push_back({ entropy, word });
+        }
+        cache_in.close();
+    }
+    else
+    {
+        ifstream file(filepath);
+        if (!file.is_open())
+        {
+            cerr << "Error opening file: " << filepath << endl;
+            exit(1);
+        }
+
+        string word;
+        while (file >> word)
+        {
+            wordTrie.insert(word);
+            wordlist.push_back({ -1, word });
+        }
+        file.close();
     }
 
-    string word;
-    while (file >> word) wordlist.insert(word);
-    file.close();
-
-    int count = wordlist.count("");
+    int count = wordTrie.count("");
 
     stats.push_back({
         .guess = "",
@@ -47,9 +70,16 @@ Wordle::Wordle(const string &targetWord)
         .bits = 0,
         .expectedBits = 0,
         .remainingBits = log2(count),
-        .query = wordlist.query(""),
+        .query = wordTrie.query(""),
         .valid = true,
     });
+
+    getTopNWords(0, true);
+    // save cache
+    ofstream cache_out(EntropyCache);
+    for (auto &word : wordlist)
+        cache_out << word.second << " " << setprecision(17) << word.first
+                  << endl;
 }
 
 bool Wordle::isWordValid(const string &word)
@@ -60,7 +90,7 @@ bool Wordle::isWordValid(const string &word)
         if (!islower(c)) return false;
 
     // if not in wordlist return false
-    if (wordlist.count(word) == 1) return true;
+    if (wordTrie.count(word) == 1) return true;
     return false;
 }
 
@@ -76,7 +106,7 @@ Wordle::Stat Wordle::guess(const string &guess)
             .bits = 0,
             .expectedBits = 0,
             .remainingBits = 0,
-            .query = wordlist.query(""),
+            .query = wordTrie.query(""),
             .valid = false,
         });
 
@@ -113,7 +143,7 @@ Wordle::Stat Wordle::guess(const string &guess)
 
     guesses++;
     auto query = getUpdatedQuery(guess, result, stats.back().query);
-    int count = wordlist.count(query), prevCount = stats.back().count;
+    int count = wordTrie.count(query), prevCount = stats.back().count;
 
     // Information = log2(1 / P(x)) = - log2(P(x)) = - log2(count / prevCount) = log2(prevCount) - log2(count)
     double bits = log2(prevCount) - log2(count);
@@ -124,7 +154,7 @@ Wordle::Stat Wordle::guess(const string &guess)
         .count = count,
         .patternProb = (double)count / prevCount,
         .bits = bits,
-        .expectedBits = getExpectedBits(-1, guess),
+        .expectedBits = getEntropy(-1, guess),
         .remainingBits = log2(count),
         .query = query,
         .valid = true,
@@ -196,14 +226,14 @@ Wordle::Stat Wordle::getStat(int i) const
 vector<string> Wordle::getWords(int i) const
 {
     vector<string> result;
-    wordlist.count(getStat(i).query, &result);
+    wordTrie.count(getStat(i).query, &result);
     return result;
 }
 
-double Wordle::getExpectedBits(int i, string guess) const
+double Wordle::getEntropy(int i, string guess) const
 {
     auto stat = getStat(i);
-    auto patterns = wordlist.getPatternsCounts(guess, stat.query);
+    auto patterns = wordTrie.getPatternsCounts(guess, stat.query);
     int total = stat.count;
     // E = sum P(x) * log2(1 / P(x)) where x is the pattern
     // log2(1 / P(x)) = - log2(P(x)) = - log2(count / total) = log2(total) - log2(count)
@@ -222,17 +252,98 @@ void Wordle::Stat::print() const
         cout << "Invalid stat" << endl;
         return;
     }
-    const int col1 = 23, col2 = 5;
 
-    cout << setw(col1) << "GUESS: " << guess << endl;
-    cout << setw(col1) << "PATTERN: " << guess2emoji(result) << endl;
-    cout << setw(col1) << "REMAINING WORDS: " << setw(col2) << count << endl;
-    cout << setw(col1) << "PATTERN PROBABILITY: " << setw(col2) << fixed
-         << setprecision(2) << patternProb << endl;
-    cout << setw(col1) << "INFORMATION GAINED: " << setw(col2) << fixed
-         << setprecision(2) << bits << " bits" << endl;
-    cout << setw(col1) << "EXPECTED GAIN: " << setw(col2) << fixed
+    cout << setw(titleWidth) << "GUESS: " << guess << endl;
+    cout << setw(titleWidth) << "PATTERN: " << guess2emoji(result) << endl;
+    cout << setw(titleWidth) << "REMAINING WORDS: " << setw(numWidth) << count
+         << endl;
+    cout << setw(titleWidth) << "PATTERN PROBABILITY: " << setw(numWidth)
+         << fixed << setprecision(2) << patternProb << endl;
+    cout << setw(titleWidth) << "INFORMATION GAINED: " << setw(numWidth)
+         << fixed << setprecision(2) << bits << " bits" << endl;
+    cout << setw(titleWidth) << "EXPECTED GAIN: " << setw(numWidth) << fixed
          << setprecision(2) << expectedBits << " bits" << endl;
-    cout << setw(col1) << "REMAINING INFORMATION: " << setw(col2) << fixed
-         << setprecision(2) << remainingBits << " bits" << endl;
+    cout << setw(titleWidth) << "REMAINING INFORMATION: " << setw(numWidth)
+         << fixed << setprecision(2) << remainingBits << " bits" << endl;
+}
+
+vector<pair<double, string>> Wordle::getTopNWords(int n, bool showProgress)
+{
+    // we assume it is sorted
+    // we first calculate for uninitialized words
+    // when recalculating
+    // we know that entropy can never be more than the previous entropy,
+    // therefore best case senario new=prev
+    // So we can skip when we have 10 elements, and the smallest element is > next elements old entropy
+    double progress = 0;
+    if (showProgress)
+    {
+        cout << "Pre-calculating entropy..." << endl;
+        updateProgressbar(progress);
+    }
+    set<pair<double, string>> topWords;
+    auto word = wordlist.begin();
+    for (int i = 0; word != wordlist.end(); word++, i++)
+
+    {
+        if (word->first == -1 ||
+            (n != 0 &&
+             (topWords.size() < n || word->first > topWords.begin()->first)))
+        {
+            word->first = getEntropy(-1, word->second);  // expensive
+            topWords.insert(*word);
+            if (topWords.size() > n) topWords.erase(topWords.begin());
+        }
+        else break;
+
+        if (showProgress)
+        {
+            progress = (double)i / wordlist.size();
+            updateProgressbar(progress);
+        }
+    }
+    // we dont need to sort rest of the words, since already sorted
+    sort(wordlist.begin(), word, greater<pair<double, string>>());
+
+    if (showProgress)
+    {
+        progress = 1;
+        updateProgressbar(progress);
+        cout << endl;
+    }
+
+    return vector<pair<double, string>>(wordlist.begin(), wordlist.begin() + n);
+}
+
+void Wordle::printPossibleWords() const
+{
+    vector<string> result = getWords(-1);
+    cout << setw(titleWidth) << "POSSIBILITIES: " << "{ ";
+    for (auto &word : result) cout << '"' << word << "\", ";
+    cout << "}" << endl;
+}
+
+void Wordle::printTopNWords(int n)
+{
+    auto topWords = getTopNWords(n);
+    string title = "TOP " + to_string(n) + " WORDS: ";
+    cout << setw(titleWidth) << title << "WORDS | ENTROPY" << endl;
+    for (auto &word : topWords)
+        cout << setw(titleWidth) << "" << word.second << " | " << setw(numWidth)
+             << fixed << setprecision(2) << word.first << endl;
+}
+
+void Wordle::updateProgressbar(double progress) const
+{
+    const int barWidth = 70;
+    cout << "[";
+    int pos = barWidth * progress;
+    for (int i = 0; i < barWidth; ++i)
+    {
+        if (i < pos) cout << "=";
+        else if (i == pos) cout << ">";
+        else cout << " ";
+    }
+    cout << "] " << int(progress * 100.0) << " %\r";
+    cout.flush();
 }
