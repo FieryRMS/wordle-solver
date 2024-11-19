@@ -34,3 +34,5 @@
 .cache/ 
 build/
 temp*
+
+entropy_cache.txt

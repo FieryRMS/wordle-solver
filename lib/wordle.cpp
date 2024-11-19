@@ -10,7 +10,7 @@ using namespace std;
 
 const int titleWidth = 23, numWidth = 5;
 const string filepath = "res/wordle/words";
-const string EntropyCache = "temp_entropy_cache.txt";
+const string EntropyCache = "entropy_cache.txt";
 
 Wordle::Wordle() : Wordle("")
 {
@@ -41,6 +41,10 @@ Wordle::Wordle(const string &targetWord)
             wordlist.push_back({ entropy, word });
         }
         cache_in.close();
+
+        cout << "WARN: Using cached entropy values. To update cache delete "
+                "file: "
+             << EntropyCache << endl;
     }
     else
     {
