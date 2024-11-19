@@ -231,6 +231,38 @@ TEST(WORDLE, COUNT3)
     EXPECT_EQ(wordle.getStatus(), Wordle::GameStatus::WON);
 }
 
+TEST(WORDLE, COUNT4)
+{
+    Wordle wordle("eches");
+    auto stat = wordle.getStat(-1);
+    EXPECT_EQ(stat.count, 14855);
+
+    stat = wordle.guess("tares");
+    EXPECT_EQ(stat.count, 375);
+
+    stat = wordle.guess("pilon");
+    EXPECT_EQ(stat.count, 78);
+
+    stat = wordle.guess("demob");
+    EXPECT_EQ(stat.count, 22);
+    vector<string> result = wordle.getWords(-1);
+    vector<string> expected = {
+        "cukes", "cuzes", "eches", "eques", "esses", "fuses", "fuzes", "fyces",
+        "fykes", "ghees", "gyves", "hykes", "jukes", "juves", "scyes", "skees",
+        "suses", "swees", "syces", "sykes", "wuses", "yukes",
+    };
+
+    EXPECT_EQ(result, expected);
+
+    stat = wordle.guess("skees");
+    EXPECT_EQ(stat.count, 7);
+    result = wordle.getWords(-1);
+    expected = {
+        "cuzes", "eches", "eques", "fuzes", "fyces", "gyves", "juves",
+    };
+    EXPECT_EQ(result, expected);
+}
+
 TEST(TRIE, COUNT)
 {
     ifstream file(filepath);

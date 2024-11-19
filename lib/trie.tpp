@@ -284,7 +284,7 @@ int Trie<N>::_count(
     for (int i = 0; i < 26; i++)
     {
         if (!node->children[i]) continue;
-        if (query.excludes[i] && query.includes[i] == 0) continue;
+        if (query.excludes[i] && query.includes[i] == 0 && !query.letters[idx]) continue;
         if (query.misplaced[idx][i]) continue;
         if (query.letters[idx] && query.letters[idx] != 'a' + i) continue;
         // includesCount left, N - idx steps left but current letter not included
