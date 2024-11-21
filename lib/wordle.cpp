@@ -3,9 +3,9 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <queue>
 #include <random>
 #include <string>
-#include <queue>
 #include "ProgressBar.h"
 
 using namespace std;
@@ -45,7 +45,7 @@ Wordle::Wordle(const string &targetWord)
         while (cache_in >> word >> entropy)
         {
             wordTrie.insert(word);
-            wordlist.push_back({ entropy, word });
+            wordlist.push({ entropy, word });
         }
         cache_in.close();
 
@@ -66,7 +66,7 @@ Wordle::Wordle(const string &targetWord)
         while (file >> word)
         {
             wordTrie.insert(word);
-            wordlist.push_back({ -1, word });
+            wordlist.push({ -1, word });
         }
         file.close();
     }
@@ -85,12 +85,18 @@ Wordle::Wordle(const string &targetWord)
         .valid = true,
     });
 
+    cout << "Pre-calculating entropy..." << endl;
     getTopNWords(0, true);
     // save cache
     ofstream cache_out(EntropyCache);
-    for (auto &word : wordlist)
+    auto wordlist_copy = wordlist;
+    while (!wordlist_copy.empty())
+    {
+        auto word = wordlist_copy.top();
+        wordlist_copy.pop();
         cache_out << word.second << " " << setprecision(17) << word.first
                   << endl;
+    }
 }
 
 bool Wordle::isWordValid(const string &word)
@@ -287,65 +293,67 @@ vector<pair<double, string>> Wordle::getTopNWords(int n, bool showProgress)
     // therefore best case senario new=prev
     // So we can skip when we have n elements, and the smallest element is >= next elements old entropy
     ProgressBar progressBar(wordlist.size(), 70);
-    if (showProgress)
-    {
-        cout << "Pre-calculating entropy..." << endl;
-        progressBar.update(0);
-    }
-    priority_queue<double, vector<double>, greater<double>> topWords;
+    if (showProgress) progressBar.update(0);
+
+    priority_queue<double> topEntropy;
+    vector<pair<double, string>> updatedWords;
     auto query = getStat(-1).query;
-    int i = 0, delcnt = 0;
-    auto delHandler = [&delcnt, &i, &progressBar, this]() {
-        rotate(wordlist.begin() + i - delcnt, wordlist.begin() + i,
-               wordlist.end());
-        i -= delcnt, delcnt = 0;
-        progressBar.setTotal(wordlist.size());
-    };
-    double mn = INT_MAX;
-    for (i = 0; i < wordlist.size(); i++)
+
+    for (int i = 0; !wordlist.empty(); i++)
     {
-        if (wordlist[i].first == -1 ||
-            (n != 0 &&
-             (topWords.size() < n || wordlist[i].first > topWords.top())))
+        // either -1 (uninitialized) or not enough words
+        // or the smallest updated entropy in top n (topEntropy)
+        // is less than the next word's old entropy (wordlist)
+        // [meaning we can possibly get a better entropy]
+        if (feq(wordlist.top().first, -1) ||
+            (n != 0 && (topEntropy.size() < n ||
+                        wordlist.top().first > -topEntropy.top())))
         {
-            wordlist[i].first =
-                getEntropy(-1, wordlist[i].second);  // expensive
-
-            // if 0 and not in query, remove
-            if (feq(wordlist[i].first, 0) && !query.verify(wordlist[i].second))
-            {
-                delcnt++;
-                continue;
-            }
-            if (delcnt) delHandler();
-
-            topWords.push(wordlist[i].first);
-            if (topWords.size() > n) topWords.pop();
-
-            mn = min(mn, wordlist[i].first);
+            auto word = wordlist.top();
+            wordlist.pop();
+            word.first = getEntropy(-1, word.second);  // expensive
+            if (feq(word.first, 0) && !query.verify(word.second)) continue;
+            topEntropy.push(-word.first);
+            if (topEntropy.size() > n) topEntropy.pop();
+            updatedWords.push_back(word);
         }
         else break;
 
-        if (showProgress) progressBar.update(i);
+        if (showProgress) progressBar.update(i + 1);
     }
 
-    if (delcnt) delHandler();
-
-    for (; mn < wordlist[i].first && i < wordlist.size(); i++);
+    for (auto &word : updatedWords) wordlist.push(word);
 
     auto comp = [&query](const pair<double, string> &a,
                          const pair<double, string> &b) {
-        if (!feq(a.first, b.first)) return a.first > b.first;
-        if (query.verify(a.second)) return true;
-        return false;
+        if (!feq(a.first, b.first)) return a.first < b.first;
+        if (query.verify(a.second)) return false;
+        return true;
     };
+    priority_queue<pair<double, string>, vector<pair<double, string>>,
+                   decltype(comp)>
+        topWords(comp);
 
-    sort(wordlist.begin(), wordlist.begin() + i, comp);
+    // if n=0 skip, else get top n words and include scores that are equal to
+    // the last element (it may contain a word in the query)
+    while (
+        n != 0 && !wordlist.empty() &&
+        (topWords.size() < n || feq(wordlist.top().first, -topEntropy.top())))
+        topWords.push(wordlist.top()), wordlist.pop();
+
+    vector<pair<double, string>> result;
+    result.reserve(n);
+    while (!topWords.empty())
+    {
+        auto word = topWords.top();
+        topWords.pop();
+        if (feq(word.first, 0) && !query.verify(word.second)) continue;
+        if (n) result.push_back(word), n--;
+        wordlist.push(word);
+    }
 
     if (showProgress) progressBar.finish();
-
-    n = min(n, (int)wordlist.size());
-    return vector<pair<double, string>>(wordlist.begin(), wordlist.begin() + n);
+    return result;
 }
 
 void Wordle::printPossibleWords() const
@@ -358,7 +366,8 @@ void Wordle::printPossibleWords() const
 
 void Wordle::printTopNWords(int n)
 {
-    auto topWords = getTopNWords(n);
+    cout << "Calculating top " << n << " words..." << endl;
+    auto topWords = getTopNWords(n, true);
     string title = "TOP " + to_string(n) + " WORDS: ";
     cout << setw(titleWidth) << title << "WORDS | ENTROPY" << endl;
     for (auto &word : topWords)

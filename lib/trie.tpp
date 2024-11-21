@@ -284,7 +284,7 @@ int Trie<N>::_count(
     for (int i = 0; i < 26; i++)
     {
         if (!node->children[i]) continue;
-        if (!query.test('a' + i, idx)) continue;
+        if (!query.verify('a' + i, idx)) continue;
 
         // prepare to traverse the next node
         if (query.includes[i])

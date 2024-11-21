@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include "trie.h"
+#include <queue>
 
 using namespace std;
 
@@ -74,5 +75,5 @@ class Wordle {
     GameStatus status;
     Trie<N> wordTrie;
     vector<Stat> stats;
-    vector<pair<double, string>> wordlist;
+    priority_queue<pair<double, string>> wordlist;
 };
