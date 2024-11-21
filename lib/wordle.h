@@ -39,8 +39,8 @@ class Wordle {
     };
 
    public:
-    Wordle();
-    Wordle(const string &word);
+    Wordle(const string &filepath);
+    Wordle(const string &filepath, const string &word);
 
     // Methods
     bool isWordValid(const string &w);

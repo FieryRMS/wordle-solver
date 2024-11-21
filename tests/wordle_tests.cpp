@@ -7,7 +7,7 @@ const string filepath = "res/wordle/words";
 
 TEST(WORDLE, VALID_WORD)
 {
-    Wordle wordle;
+    Wordle wordle(filepath);
     EXPECT_EQ(wordle.getGuesses(), 0);
     EXPECT_EQ(wordle.getMaxGuesses(), 6);
     EXPECT_EQ(wordle.getStatus(), Wordle::GameStatus::ONGOING);
@@ -24,7 +24,7 @@ TEST(WORDLE, VALID_WORD)
 
 TEST(WORDLE, GAME_FAIL)
 {
-    Wordle wordle;
+    Wordle wordle(filepath);
 
     for (int i = 0; i < 6; i++) wordle.guess("world");
 
@@ -34,7 +34,7 @@ TEST(WORDLE, GAME_FAIL)
 
 TEST(WORDLE, GAME_WIN)
 {
-    Wordle wordle("hello");
+    Wordle wordle(filepath, "hello");
 
     wordle.guess("hello");
 
@@ -44,7 +44,7 @@ TEST(WORDLE, GAME_WIN)
 
 TEST(WORDLE, GAME_EDGE_CASES)
 {
-    Wordle wordle("aahed");
+    Wordle wordle(filepath, "aahed");
     auto result = wordle.guess("bruja").result,
          expected = vector<Wordle::TileType>{ Wordle::TileType::WRONG,
                                               Wordle::TileType::WRONG,
@@ -103,7 +103,7 @@ TEST(WORDLE, GAME_EDGE_CASES)
 
 TEST(WORDLE, COUNT1)
 {
-    Wordle wordle("thowl");
+    Wordle wordle(filepath, "thowl");
     auto stat = wordle.getStat(-1);
     EXPECT_EQ(stat.count, 14855);
 
@@ -137,7 +137,7 @@ TEST(WORDLE, COUNT1)
 
 TEST(WORDLE, COUNT2)
 {
-    Wordle wordle("breys");
+    Wordle wordle(filepath, "breys");
     auto stat = wordle.getStat(-1);
     EXPECT_EQ(stat.count, 14855);
 
@@ -191,7 +191,7 @@ TEST(WORDLE, COUNT2)
 
 TEST(WORDLE, COUNT3)
 {
-    Wordle wordle("bribe");
+    Wordle wordle(filepath, "bribe");
     auto stat = wordle.getStat(-1);
     EXPECT_EQ(stat.count, 14855);
 
@@ -233,7 +233,7 @@ TEST(WORDLE, COUNT3)
 
 TEST(WORDLE, COUNT4)
 {
-    Wordle wordle("eches");
+    Wordle wordle(filepath, "eches");
     auto stat = wordle.getStat(-1);
     EXPECT_EQ(stat.count, 14855);
 
@@ -265,7 +265,7 @@ TEST(WORDLE, COUNT4)
 
 TEST(WORDLE, QUERY_EXISTS)
 {
-    Wordle wordle("eches");
+    Wordle wordle(filepath, "eches");
     auto stat = wordle.guess("tares");
     EXPECT_TRUE(stat.query.verify("eches"));
 

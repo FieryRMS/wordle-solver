@@ -5,13 +5,14 @@
 #include "wordle.h"
 
 using namespace std;
+const string filepath = "res/wordle/words";
 
 int main()
 {
 #ifdef _WIN32
     SetConsoleOutputCP(CP_UTF8);
 #endif
-    Wordle wordle;
+    Wordle wordle(filepath);
     auto stat = wordle.getStat(-1);
     stat.print();
     wordle.printTopNWords(10);

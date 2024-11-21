@@ -11,7 +11,6 @@
 using namespace std;
 
 const int titleWidth = 23, numWidth = 5;
-const string filepath = "res/wordle/words";
 const string EntropyCache = "entropy_cache.txt";
 
 bool feq(double a, double b)
@@ -19,7 +18,7 @@ bool feq(double a, double b)
     return fabs(a - b) < 1e-6;
 }
 
-Wordle::Wordle() : Wordle("")
+Wordle::Wordle(const string &filepath) : Wordle(filepath, "")
 {
     // choose a random word from the list
     random_device rd;
@@ -28,7 +27,7 @@ Wordle::Wordle() : Wordle("")
     targetWord = wordTrie.getNthWord(dis(gen));
 }
 
-Wordle::Wordle(const string &targetWord)
+Wordle::Wordle(const string &filepath, const string &targetWord)
     : targetWord(targetWord),
       guesses(0),
       status(GameStatus::ONGOING),
