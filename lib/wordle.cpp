@@ -5,6 +5,7 @@
 #include <iostream>
 #include <random>
 #include <string>
+#include <queue>
 #include "ProgressBar.h"
 
 using namespace std;
@@ -12,6 +13,11 @@ using namespace std;
 const int titleWidth = 23, numWidth = 5;
 const string filepath = "res/wordle/words";
 const string EntropyCache = "entropy_cache.txt";
+
+bool feq(double a, double b)
+{
+    return fabs(a - b) < 1e-6;
+}
 
 Wordle::Wordle() : Wordle("")
 {
@@ -279,35 +285,66 @@ vector<pair<double, string>> Wordle::getTopNWords(int n, bool showProgress)
     // when recalculating
     // we know that entropy can never be more than the previous entropy,
     // therefore best case senario new=prev
-    // So we can skip when we have 10 elements, and the smallest element is > next elements old entropy
+    // So we can skip when we have n elements, and the smallest element is >= next elements old entropy
     ProgressBar progressBar(wordlist.size(), 70);
     if (showProgress)
     {
         cout << "Pre-calculating entropy..." << endl;
         progressBar.update(0);
     }
-    set<pair<double, string>> topWords;
-    auto word = wordlist.begin();
-    for (int i = 0; word != wordlist.end(); word++, i++)
-
+    priority_queue<double, vector<double>, greater<double>> topWords;
+    auto query = getStat(-1).query;
+    int i = 0, delcnt = 0;
+    auto delHandler = [&delcnt, &i, &progressBar, this]() {
+        rotate(wordlist.begin() + i - delcnt, wordlist.begin() + i,
+               wordlist.end());
+        i -= delcnt, delcnt = 0;
+        progressBar.setTotal(wordlist.size());
+    };
+    double mn = INT_MAX;
+    for (i = 0; i < wordlist.size(); i++)
     {
-        if (word->first == -1 ||
+        if (wordlist[i].first == -1 ||
             (n != 0 &&
-             (topWords.size() < n || word->first > topWords.begin()->first)))
+             (topWords.size() < n || wordlist[i].first > topWords.top())))
         {
-            word->first = getEntropy(-1, word->second);  // expensive
-            topWords.insert(*word);
-            if (topWords.size() > n) topWords.erase(topWords.begin());
+            wordlist[i].first =
+                getEntropy(-1, wordlist[i].second);  // expensive
+
+            // if 0 and not in query, remove
+            if (feq(wordlist[i].first, 0) && !query.verify(wordlist[i].second))
+            {
+                delcnt++;
+                continue;
+            }
+            if (delcnt) delHandler();
+
+            topWords.push(wordlist[i].first);
+            if (topWords.size() > n) topWords.pop();
+
+            mn = min(mn, wordlist[i].first);
         }
         else break;
 
         if (showProgress) progressBar.update(i);
     }
-    // we dont need to sort rest of the words, since already sorted
-    sort(wordlist.begin(), word, greater<pair<double, string>>());
+
+    if (delcnt) delHandler();
+
+    for (; mn < wordlist[i].first && i < wordlist.size(); i++);
+
+    auto comp = [&query](const pair<double, string> &a,
+                         const pair<double, string> &b) {
+        if (!feq(a.first, b.first)) return a.first > b.first;
+        if (query.verify(a.second)) return true;
+        return false;
+    };
+
+    sort(wordlist.begin(), wordlist.begin() + i, comp);
 
     if (showProgress) progressBar.finish();
 
+    n = min(n, (int)wordlist.size());
     return vector<pair<double, string>>(wordlist.begin(), wordlist.begin() + n);
 }
 

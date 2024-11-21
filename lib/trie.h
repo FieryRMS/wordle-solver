@@ -1,8 +1,9 @@
 #pragma once
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
-#include <set>
+
 
 using namespace std;
 
@@ -20,6 +21,7 @@ class Trie {
         void setMisplaced(const string &s, const int &idx);
         void setMisplaced(const char &c, const int &idx);
         void print() const;
+        bool verify(const string &word);
 
        private:
         Query(const string &s);
@@ -28,6 +30,7 @@ class Trie {
         bool misplaced[N][26];
         bool excludes[26];
         char letters[N];
+        bool verify(const char &c, const int &idx) const;
 
         friend class Trie<N>;
     };

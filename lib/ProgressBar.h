@@ -5,6 +5,7 @@ class ProgressBar {
     ProgressBar(int total, int width = 50) : total(total), width(width) {}
 
     void update(int progress);
+    void setTotal(int t) { this->total = t; }
     void finish();
 
    private:

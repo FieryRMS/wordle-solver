@@ -263,6 +263,29 @@ TEST(WORDLE, COUNT4)
     EXPECT_EQ(result, expected);
 }
 
+TEST(WORDLE, QUERY_EXISTS)
+{
+    Wordle wordle("eches");
+    auto stat = wordle.guess("tares");
+    EXPECT_TRUE(stat.query.verify("eches"));
+
+    stat = wordle.guess("pilon");
+    EXPECT_TRUE(stat.query.verify("eches"));
+
+    stat = wordle.guess("demob");
+    EXPECT_TRUE(stat.query.verify("eches"));
+
+    // stat = wordle.guess("skees");
+    // EXPECT_TRUE(stat.query.test("eches"));
+
+    stat = wordle.guess("lucky");
+    EXPECT_TRUE(stat.query.verify("eches"));
+
+    EXPECT_FALSE(stat.query.verify("esses"));
+    EXPECT_FALSE(stat.query.verify("ghees"));
+    EXPECT_FALSE(stat.query.verify("swees"));
+}
+
 TEST(TRIE, COUNT)
 {
     ifstream file(filepath);

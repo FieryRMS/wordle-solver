@@ -284,11 +284,7 @@ int Trie<N>::_count(
     for (int i = 0; i < 26; i++)
     {
         if (!node->children[i]) continue;
-        if (query.excludes[i] && query.includes[i] == 0 && !query.letters[idx]) continue;
-        if (query.misplaced[idx][i]) continue;
-        if (query.letters[idx] && query.letters[idx] != 'a' + i) continue;
-        // includesCount left, N - idx steps left but current letter not included
-        if (query.includesCount == N - idx && query.includes[i] == 0) continue;
+        if (!query.test('a' + i, idx)) continue;
 
         // prepare to traverse the next node
         if (query.includes[i])
@@ -401,4 +397,38 @@ map<string, int> Trie<N>::getPatternsCounts(const string &guess,
     _count(SampleSpace, root, nullptr, &word, &guess, &guessLetters, &memo,
            &pattern);
     return memo;
+}
+
+template <size_t N>
+bool Trie<N>::Query::verify(const char &c, const int &idx) const
+{
+    if (excludes[index(c)] && includes[index(c)] == 0 && !letters[idx])
+        return false;
+    if (misplaced[idx][index(c)]) return false;
+    if (letters[idx] && letters[idx] != c) return false;
+    // includesCount left, N - idx steps left but current letter not included
+    if (includesCount == N - idx && includes[index(c)] == 0) return false;
+
+    return true;
+}
+
+template <size_t N>
+bool Trie<N>::Query::verify(const string &word)
+{
+    vector<int> included;
+    included.reserve(5);
+    bool flag = true;
+    for (int i = 0; i < N; i++)
+    {
+        if (!verify(word[i], i))
+        {
+            flag = false;
+            break;
+        }
+        if (includes[index(word[i])])
+            includes[index(word[i])]--, includesCount--,
+                included.push_back(index(word[i]));
+    }
+    for (auto &i : included) includes[i]++, includesCount++;
+    return flag;
 }
