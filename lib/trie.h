@@ -4,12 +4,12 @@
 #include <string>
 #include <vector>
 
-
 using namespace std;
 
 template <size_t N>
 class Trie {
    public:
+    enum ID { ALLOWED = 0, POSSIBLE = 1 };
     class Query {
        public:
         void parse(const string &s);
@@ -24,7 +24,8 @@ class Trie {
         bool verify(const string &word);
 
        private:
-        Query(const string &s);
+        Query(const string &s, const ID &id);
+        ID trieId;
         int includes[26];
         int includesCount;
         bool misplaced[N][26];
@@ -36,20 +37,20 @@ class Trie {
     };
 
     Trie();
-    void insert(const string &word);
+    void insert(const string &word, const ID &id);
     int count(Query query, vector<string> *result = nullptr) const;
-    int count(const string &word) const;
+    int count(const string &word, const ID &id) const;
     map<string, int> getPatternsCounts(const string &word,
                                        Query &SampleSpace) const;
-    string getNthWord(int n) const;
-    Query query(const string s = "") const;
+    string getNthWord(int n, const ID &id) const;
+    Query query(const string s, const ID &id) const;
 
     ~Trie();
 
    private:
     struct Node {
         Node *children[26];
-        int count;
+        int count[2];
         bool isEnd;
         Node();
 

@@ -12,7 +12,7 @@ Trie<N>::Trie()
 }
 
 template <size_t N>
-Trie<N>::Node::Node() : children(), count(0), isEnd(false)
+Trie<N>::Node::Node() : children(), count(), isEnd(false)
 {}
 
 template <size_t N>
@@ -40,20 +40,21 @@ int Trie<N>::index(const char &c)
  *
  * @tparam N
  * @param word
+ * @param id
  */
 template <size_t N>
-void Trie<N>::insert(const string &word)
+void Trie<N>::insert(const string &word, const ID &id)
 {
     assert(word.size() == N && "invalid word size");
 
     Node *node = root;
-    node->count++;
+    node->count[id]++;
     for (auto &c : word)
     {
         int i = index(c);
         if (!node->children[i]) node->children[i] = new Node();
         node = node->children[i];
-        node->count++;
+        node->count[id]++;
     }
     node->isEnd = true;
 }
@@ -66,16 +67,16 @@ void Trie<N>::insert(const string &word)
  * @return int
  */
 template <size_t N>
-int Trie<N>::count(const string &word) const
+int Trie<N>::count(const string &word, const ID &id) const
 {
     Node *node = root;
     for (auto &c : word)
     {
         int i = index(c);
-        if (!node->children[i]) return 0;
+        if (!node->children[i] || node->children[i]->count[id] == 0) return 0;
         node = node->children[i];
     }
-    return node->count;
+    return node->count[id];
 }
 
 /**
@@ -86,7 +87,7 @@ int Trie<N>::count(const string &word) const
  * @return string
  */
 template <size_t N>
-string Trie<N>::getNthWord(int n) const
+string Trie<N>::getNthWord(int n, const ID &id) const
 {
     string word = "";
     Node *node = root;
@@ -95,8 +96,9 @@ string Trie<N>::getNthWord(int n) const
         bool flag = false;
         for (int i = 0; i < 26; i++)
         {
-            if (!node->children[i]) continue;
-            if (n <= node->children[i]->count)
+            if (!node->children[i] || node->children[i]->count[id] == 0)
+                continue;
+            if (n <= node->children[i]->count[id])
             {
                 word += 'a' + i;
                 node = node->children[i];
@@ -104,7 +106,7 @@ string Trie<N>::getNthWord(int n) const
                 flag = true;
                 break;
             }
-            n -= node->children[i]->count;
+            n -= node->children[i]->count[id];
         }
         if (!flag) break;
     }
@@ -119,14 +121,14 @@ string Trie<N>::getNthWord(int n) const
  * @return Trie<N>::Query
  */
 template <size_t N>
-Trie<N>::Query Trie<N>::query(const string s) const
+Trie<N>::Query Trie<N>::query(const string s, const ID &id) const
 {
-    return Query(s);
+    return Query(s, id);
 }
 
 template <size_t N>
-Trie<N>::Query::Query(const string &s)
-    : includes(), excludes(), letters(), misplaced(), includesCount(0)
+Trie<N>::Query::Query(const string &s, const ID &id)
+    : includes(), excludes(), letters(), misplaced(), includesCount(0), trieId(id)
 {
     parse(s);
 }
@@ -272,7 +274,7 @@ int Trie<N>::_count(
     {
         if (result && word) result->push_back(*word);
         if (memo && pattern) (*memo)[*pattern]++;
-        return node->count;  // or node->isEnd?
+        return node->count[query.trieId];  // or node->isEnd?
     }
 
     // not enough letters left
@@ -283,7 +285,8 @@ int Trie<N>::_count(
 
     for (int i = 0; i < 26; i++)
     {
-        if (!node->children[i]) continue;
+        if (!node->children[i] || node->children[i]->count[query.trieId] == 0)
+            continue;
         if (!query.verify('a' + i, idx)) continue;
 
         // prepare to traverse the next node

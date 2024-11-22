@@ -4,10 +4,11 @@
 #include "wordle.h"
 
 const string filepath = "res/wordle/words";
+const string EntropyCache = "entropy_cache_TEST.txt";
 
 TEST(WORDLE, VALID_WORD)
 {
-    Wordle wordle(filepath);
+    Wordle wordle(filepath, "aahed", "", EntropyCache);
     EXPECT_EQ(wordle.getGuesses(), 0);
     EXPECT_EQ(wordle.getMaxGuesses(), 6);
     EXPECT_EQ(wordle.getStatus(), Wordle::GameStatus::ONGOING);
@@ -24,7 +25,7 @@ TEST(WORDLE, VALID_WORD)
 
 TEST(WORDLE, GAME_FAIL)
 {
-    Wordle wordle(filepath);
+    Wordle wordle(filepath, "hello", "", EntropyCache);
 
     for (int i = 0; i < 6; i++) wordle.guess("world");
 
@@ -34,7 +35,7 @@ TEST(WORDLE, GAME_FAIL)
 
 TEST(WORDLE, GAME_WIN)
 {
-    Wordle wordle(filepath, "hello");
+    Wordle wordle(filepath, "hello", "", EntropyCache);
 
     wordle.guess("hello");
 
@@ -44,7 +45,7 @@ TEST(WORDLE, GAME_WIN)
 
 TEST(WORDLE, GAME_EDGE_CASES)
 {
-    Wordle wordle(filepath, "aahed");
+    Wordle wordle(filepath, "aahed", "", EntropyCache);
     auto result = wordle.guess("bruja").result,
          expected = vector<Wordle::TileType>{ Wordle::TileType::WRONG,
                                               Wordle::TileType::WRONG,
@@ -103,7 +104,7 @@ TEST(WORDLE, GAME_EDGE_CASES)
 
 TEST(WORDLE, COUNT1)
 {
-    Wordle wordle(filepath, "thowl");
+    Wordle wordle(filepath, "thowl", "", EntropyCache);
     auto stat = wordle.getStat(-1);
     EXPECT_EQ(stat.count, 14855);
 
@@ -137,7 +138,7 @@ TEST(WORDLE, COUNT1)
 
 TEST(WORDLE, COUNT2)
 {
-    Wordle wordle(filepath, "breys");
+    Wordle wordle(filepath, "breys", "", EntropyCache);
     auto stat = wordle.getStat(-1);
     EXPECT_EQ(stat.count, 14855);
 
@@ -191,7 +192,7 @@ TEST(WORDLE, COUNT2)
 
 TEST(WORDLE, COUNT3)
 {
-    Wordle wordle(filepath, "bribe");
+    Wordle wordle(filepath, "bribe", "", EntropyCache);
     auto stat = wordle.getStat(-1);
     EXPECT_EQ(stat.count, 14855);
 
@@ -233,7 +234,7 @@ TEST(WORDLE, COUNT3)
 
 TEST(WORDLE, COUNT4)
 {
-    Wordle wordle(filepath, "eches");
+    Wordle wordle(filepath, "eches", "", EntropyCache);
     auto stat = wordle.getStat(-1);
     EXPECT_EQ(stat.count, 14855);
 
@@ -265,7 +266,7 @@ TEST(WORDLE, COUNT4)
 
 TEST(WORDLE, QUERY_EXISTS)
 {
-    Wordle wordle(filepath, "eches");
+    Wordle wordle(filepath, "eches", "", EntropyCache);
     auto stat = wordle.guess("tares");
     EXPECT_TRUE(stat.query.verify("eches"));
 
@@ -292,24 +293,25 @@ TEST(TRIE, COUNT)
     ASSERT_TRUE(file.is_open());
 
     Trie<5> trie;
+    auto ID = Trie<5>::ID::ALLOWED;
     string word;
-    while (file >> word) trie.insert(word);
+    while (file >> word) trie.insert(word, ID);
 
-    EXPECT_EQ(trie.count(""), 14855);
-    EXPECT_EQ(trie.count(trie.query("")), 14855);
+    EXPECT_EQ(trie.count("", ID), 14855);
+    EXPECT_EQ(trie.count(trie.query("", ID)), 14855);
 
-    EXPECT_EQ(trie.count("hello"), 1);
-    EXPECT_EQ(trie.count("world"), 1);
-    EXPECT_EQ(trie.count("aahed"), 1);
+    EXPECT_EQ(trie.count("hello", ID), 1);
+    EXPECT_EQ(trie.count("world", ID), 1);
+    EXPECT_EQ(trie.count("aahed", ID), 1);
 
-    EXPECT_EQ(trie.count("worlds"), 0);
-    EXPECT_DEATH(trie.count("12345"), ".*must be lower case letter");
+    EXPECT_EQ(trie.count("worlds", ID), 0);
+    EXPECT_DEATH(trie.count("12345", ID), ".*must be lower case letter");
 
-    EXPECT_EQ(trie.count(trie.query(".z.a.")), 1);
-    EXPECT_EQ(trie.count(trie.query("..a.y")), 97);
-    EXPECT_EQ(trie.count(trie.query("cur..")), 25);
+    EXPECT_EQ(trie.count(trie.query(".z.a.", ID)), 1);
+    EXPECT_EQ(trie.count(trie.query("..a.y", ID)), 97);
+    EXPECT_EQ(trie.count(trie.query("cur..", ID)), 25);
 
-    auto query1 = trie.query(".a.a.");
+    auto query1 = trie.query(".a.a.", ID);
     EXPECT_EQ(trie.count(query1), 278);
 
     query1.include('b');
@@ -325,7 +327,7 @@ TEST(TRIE, COUNT)
                              "nabam", "nawab", "rabat", "tabac" };
     EXPECT_EQ(result, expected);
 
-    auto query2 = trie.query();
+    auto query2 = trie.query("", ID);
     query2.setCorrect('e', 1);
     EXPECT_EQ(trie.count(query2), 1857);
 
@@ -354,19 +356,20 @@ TEST(TRIE, NTH_WORD)
     ASSERT_TRUE(file.is_open());
 
     Trie<5> trie;
+    auto ID = Trie<5>::ID::ALLOWED;
     string word;
-    while (file >> word) trie.insert(word);
+    while (file >> word) trie.insert(word, ID);
 
-    EXPECT_EQ(trie.getNthWord(0), "");
-    EXPECT_EQ(trie.getNthWord(1), "aahed");
-    EXPECT_EQ(trie.getNthWord(2), "aalii");
-    EXPECT_EQ(trie.getNthWord(5956), "jaded");
-    EXPECT_EQ(trie.getNthWord(6969), "litas");
-    EXPECT_EQ(trie.getNthWord(7978), "motes");
-    EXPECT_EQ(trie.getNthWord(8914), "othyl");
-    EXPECT_EQ(trie.getNthWord(10007), "pugil");
-    EXPECT_EQ(trie.getNthWord(12345), "state");
-    EXPECT_EQ(trie.getNthWord(14855), "zymic");
+    EXPECT_EQ(trie.getNthWord(0, ID), "");
+    EXPECT_EQ(trie.getNthWord(1, ID), "aahed");
+    EXPECT_EQ(trie.getNthWord(2, ID), "aalii");
+    EXPECT_EQ(trie.getNthWord(5956, ID), "jaded");
+    EXPECT_EQ(trie.getNthWord(6969, ID), "litas");
+    EXPECT_EQ(trie.getNthWord(7978, ID), "motes");
+    EXPECT_EQ(trie.getNthWord(8914, ID), "othyl");
+    EXPECT_EQ(trie.getNthWord(10007, ID), "pugil");
+    EXPECT_EQ(trie.getNthWord(12345, ID), "state");
+    EXPECT_EQ(trie.getNthWord(14855, ID), "zymic");
 }
 TEST(TRIE, PATTERNCOUNTS1)
 {
@@ -374,8 +377,9 @@ TEST(TRIE, PATTERNCOUNTS1)
     vector<string> words = { "beisa", "fossa", "plush", "queck",
                              "rossa", "sputa", "squad", "camus" };
     Trie<5> trie;
-    for (auto &w : words) trie.insert(w);
-    auto query = trie.query("");
+    auto ID = Trie<5>::ID::ALLOWED;
+    for (auto &w : words) trie.insert(w, ID);
+    auto query = trie.query("", ID);
     auto result = trie.getPatternsCounts(guess, query);
     map<string, int> expected = {
         { "CCCCC", 1 }, { "MWWMW", 1 }, { "WMWMM", 2 },
@@ -388,9 +392,10 @@ TEST(TRIE, PATTERNCOUNTS2)
 {
     string guess = "goory";
     vector<string> words = { "snool", "goory" };
+    auto ID = Trie<5>::ID::ALLOWED;
     Trie<5> trie;
-    for (auto &w : words) trie.insert(w);
-    auto query = trie.query("");
+    for (auto &w : words) trie.insert(w, ID);
+    auto query = trie.query("", ID);
     auto result = trie.getPatternsCounts(guess, query);
     map<string, int> expected = {
         { "CCCCC", 1 },
@@ -406,9 +411,10 @@ TEST(TRIE, PATTERNCOUNTS3)
 
     string word;
     Trie<5> trie;
-    while (file >> word) trie.insert(word);
+    auto ID = Trie<5>::ID::ALLOWED;
+    while (file >> word) trie.insert(word, ID);
 
-    auto query = trie.query("");
+    auto query = trie.query("", ID);
     auto result = trie.getPatternsCounts("aband", query);
 
     map<string, int> expected{
@@ -483,10 +489,11 @@ TEST(TRIE, PATTERNCOUNTS4)
     ASSERT_TRUE(file.is_open());
 
     string word;
+    auto ID = Trie<5>::ID::ALLOWED;
     Trie<5> trie;
-    while (file >> word) trie.insert(word);
+    while (file >> word) trie.insert(word, ID);
 
-    auto query = trie.query("");
+    auto query = trie.query("", ID);
     auto result = trie.getPatternsCounts("annan", query);
 
     map<string, int> expected{

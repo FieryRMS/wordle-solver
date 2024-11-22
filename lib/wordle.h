@@ -1,9 +1,9 @@
 #pragma once
 
+#include <queue>
 #include <string>
 #include <vector>
 #include "trie.h"
-#include <queue>
 
 using namespace std;
 
@@ -39,8 +39,14 @@ class Wordle {
     };
 
    public:
-    Wordle(const string &filepath);
-    Wordle(const string &filepath, const string &word);
+    Wordle(const string &filepath,
+           const string &possibleFilepath,
+           const string &cacheFilepath = "");
+
+    Wordle(const string &filepath,
+           const string &word,
+           const string &possibleFilepath,
+           const string &cacheFilepath);
 
     // Methods
     bool isWordValid(const string &w);
@@ -68,12 +74,13 @@ class Wordle {
                                    const vector<TileType> &result,
                                    Trie<N>::Query query);
 
-
     string targetWord;
     int guesses;
     static const int maxGuesses = 6;
     GameStatus status;
     Trie<N> wordTrie;
+    Trie<N>::ID allowedID = Trie<N>::ID::ALLOWED;
+    Trie<N>::ID possibleID = Trie<N>::ID::ALLOWED;
     vector<Stat> stats;
     priority_queue<pair<double, string>> wordlist;
 };

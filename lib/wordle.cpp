@@ -1,5 +1,6 @@
 #include "wordle.h"
 #include <cmath>
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -18,16 +19,25 @@ bool feq(double a, double b)
     return fabs(a - b) < 1e-6;
 }
 
-Wordle::Wordle(const string &filepath) : Wordle(filepath, "")
+Wordle::Wordle(const string &filepath,
+               const string &possibleFilepath,
+               const string &cacheFilepath)
+    : Wordle(filepath,
+             "",
+             possibleFilepath,
+             cacheFilepath.empty() ? EntropyCache : cacheFilepath)
 {
     // choose a random word from the list
     random_device rd;
     mt19937 gen(rd());
-    uniform_int_distribution<> dis(1, wordTrie.count(""));
-    targetWord = wordTrie.getNthWord(dis(gen));
+    uniform_int_distribution<> dis(1, wordTrie.count("", possibleID));
+    targetWord = wordTrie.getNthWord(dis(gen), possibleID);
 }
 
-Wordle::Wordle(const string &filepath, const string &targetWord)
+Wordle::Wordle(const string &filepath,
+               const string &targetWord,
+               const string &possibleFilepath,
+               const string &cacheFilepath)
     : targetWord(targetWord),
       guesses(0),
       status(GameStatus::ONGOING),
@@ -36,21 +46,21 @@ Wordle::Wordle(const string &filepath, const string &targetWord)
     stats.reserve(maxGuesses + 1);
 
     // check if cache exists
-    ifstream cache_in(EntropyCache);
-    if (cache_in.is_open())
+    ifstream cache(cacheFilepath);
+    if (cache.is_open())
     {
         string word;
         double entropy;
-        while (cache_in >> word >> entropy)
+        while (cache >> word >> entropy)
         {
-            wordTrie.insert(word);
+            wordTrie.insert(word, allowedID);
             wordlist.push({ entropy, word });
         }
-        cache_in.close();
+        cache.close();
 
-        cout << "WARN: Using cached entropy values. To update cache delete "
+        cout << "WARN: Using cached entropy values from "
                 "file: "
-             << EntropyCache << endl;
+             << filesystem::absolute(cacheFilepath) << endl;
     }
     else
     {
@@ -64,13 +74,27 @@ Wordle::Wordle(const string &filepath, const string &targetWord)
         string word;
         while (file >> word)
         {
-            wordTrie.insert(word);
+            wordTrie.insert(word, allowedID);
             wordlist.push({ -1, word });
         }
         file.close();
     }
 
-    int count = wordTrie.count("");
+    if (!possibleFilepath.empty())
+    {
+        possibleID = Trie<N>::ID::POSSIBLE;
+        ifstream file(possibleFilepath);
+        if (!file.is_open())
+        {
+            cerr << "Error opening file: " << possibleFilepath << endl;
+            exit(1);
+        }
+
+        string word;
+        while (file >> word) wordTrie.insert(word, possibleID);
+    }
+
+    int count = wordTrie.count("", possibleID);
 
     stats.push_back({
         .guess = "",
@@ -80,14 +104,14 @@ Wordle::Wordle(const string &filepath, const string &targetWord)
         .bits = 0,
         .expectedBits = 0,
         .remainingBits = log2(count),
-        .query = wordTrie.query(""),
+        .query = wordTrie.query("", possibleID),
         .valid = true,
     });
 
     cout << "Pre-calculating entropy..." << endl;
     getTopNWords(0, true);
     // save cache
-    ofstream cache_out(EntropyCache);
+    ofstream cache_out(cacheFilepath);
     auto wordlist_copy = wordlist;
     while (!wordlist_copy.empty())
     {
@@ -106,7 +130,7 @@ bool Wordle::isWordValid(const string &word)
         if (!islower(c)) return false;
 
     // if not in wordlist return false
-    if (wordTrie.count(word) == 1) return true;
+    if (wordTrie.count(word, allowedID) == 1) return true;
     return false;
 }
 
@@ -122,7 +146,7 @@ Wordle::Stat Wordle::guess(const string &guess)
             .bits = 0,
             .expectedBits = 0,
             .remainingBits = 0,
-            .query = wordTrie.query(""),
+            .query = wordTrie.query("", allowedID),
             .valid = false,
         });
 
@@ -158,7 +182,7 @@ Wordle::Stat Wordle::guess(const string &guess)
     }
 
     guesses++;
-    auto query = getUpdatedQuery(guess, result, stats.back().query);
+    auto query = getUpdatedQuery(guess, result, getStat(-1).query);
     int count = wordTrie.count(query), prevCount = stats.back().count;
 
     // Information = log2(1 / P(x)) = - log2(P(x)) = - log2(count / prevCount) = log2(prevCount) - log2(count)
