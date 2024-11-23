@@ -7,6 +7,8 @@ set(SOURCE_FILES
     trie.cpp
     ProgressBar.h
     ProgressBar.cpp
+    Simulator.h
+    Simulator.cpp
 )
 
 add_library(${PROJECT_NAME} STATIC ${SOURCE_FILES})

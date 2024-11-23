@@ -2,6 +2,7 @@
 #include <windows.h>
 #endif
 #include <iostream>
+#include "Simulator.h"
 #include "wordle.h"
 
 using namespace std;
@@ -15,6 +16,17 @@ int main()
     SetConsoleOutputCP(CP_UTF8);
 #endif
     Wordle wordle(allowedFilepath, possibleFilepath, cacheFilepath);
+    Simulator sim(possibleFilepath, wordle);
+
+    cout << "Run simulator? (y/n): ";
+    char choice;
+    cin >> choice;
+    if (choice == 'y')
+    {
+        sim.run();
+        return 0;
+    }
+    cout << "Starting game..." << endl;
 
     while (true)
     {
@@ -59,5 +71,6 @@ int main()
 
         cout << "Resetting game..." << endl << endl;
         wordle.reset();
+        wordle.setRandomTargetWord();
     }
 }

@@ -2,7 +2,7 @@
 
 class ProgressBar {
    public:
-    ProgressBar(int total, int width = 50) : total(total), width(width) {}
+    ProgressBar(int total, int width = 70) : total(total), width(width) {}
 
     void update(int progress);
     void setTotal(int t) { this->total = t; }

@@ -316,11 +316,9 @@ vector<pair<double, string>> Wordle::getTopNWords(const int n,
     // we know that entropy can never be more than the previous entropy,
     // therefore best case senario new=prev
     // So we can skip when we have n elements, and the smallest element is >= next elements old entropy
-    ProgressBar progressBar(wordlist.size(), 70);
+    ProgressBar progressBar(wordlist.size());
     if (showProgress) progressBar.update(0);
 
-    priority_queue<double> topEntropy;
-    vector<pair<double, string>> updatedWords;
     auto query = getStat(-1).query;
 
     // check if result exists in cache
@@ -345,6 +343,8 @@ vector<pair<double, string>> Wordle::getTopNWords(const int n,
         return wordTrie.count(word, possibleID) && query.verify(word);
     };
 
+    priority_queue<double> topEntropy;
+    vector<pair<double, string>> updatedWords;
     for (int i = 0; !wordlist.empty(); i++)
     {
         // either -1 (uninitialized) or not enough words
@@ -445,5 +445,4 @@ void Wordle::reset()
     auto stat = getStat(0);
     stats.clear();
     stats.push_back(stat);
-    setRandomTargetWord();
 }
