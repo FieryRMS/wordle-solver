@@ -322,6 +322,11 @@ vector<pair<double, string>> Wordle::getTopNWords(int n, bool showProgress)
     vector<pair<double, string>> updatedWords;
     auto query = getStat(-1).query;
 
+    auto isInWordSpace = [&query, this](const string &word) {
+        // if it exists in the possible words and it matches the query
+        return wordTrie.count(word, possibleID) && query.verify(word);
+    };
+
     for (int i = 0; !wordlist.empty(); i++)
     {
         // either -1 (uninitialized) or not enough words
@@ -335,7 +340,7 @@ vector<pair<double, string>> Wordle::getTopNWords(int n, bool showProgress)
             auto word = wordlist.top();
             wordlist.pop();
             word.first = getEntropy(-1, word.second);  // expensive
-            if (feq(word.first, 0) && !query.verify(word.second)) continue;
+            if (feq(word.first, 0) && !isInWordSpace(word.second)) continue;
             topEntropy.push(-word.first);
             if (topEntropy.size() > n) topEntropy.pop();
             updatedWords.push_back(word);
@@ -347,10 +352,10 @@ vector<pair<double, string>> Wordle::getTopNWords(int n, bool showProgress)
 
     for (auto &word : updatedWords) wordlist.push(word);
 
-    auto comp = [&query](const pair<double, string> &a,
-                         const pair<double, string> &b) {
+    auto comp = [&isInWordSpace](const pair<double, string> &a,
+                                 const pair<double, string> &b) {
         if (!feq(a.first, b.first)) return a.first < b.first;
-        if (query.verify(a.second)) return false;
+        if (isInWordSpace(a.second)) return false;
         return true;
     };
     priority_queue<pair<double, string>, vector<pair<double, string>>,
@@ -370,7 +375,7 @@ vector<pair<double, string>> Wordle::getTopNWords(int n, bool showProgress)
     {
         auto word = topWords.top();
         topWords.pop();
-        if (feq(word.first, 0) && !query.verify(word.second)) continue;
+        if (feq(word.first, 0) && !isInWordSpace(word.second)) continue;
         if (n) result.push_back(word), n--;
         wordlist.push(word);
     }

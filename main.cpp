@@ -7,14 +7,14 @@
 using namespace std;
 const string allowedFilepath = "res/3b1b/allowed_words.txt";
 const string possibleFilepath = "res/3b1b/possible_words.txt";
-const string EntropyCache = "entropy_cache.txt";
+const string cacheFilepath = "entropy_cache.txt";
 
 int main()
 {
 #ifdef _WIN32
     SetConsoleOutputCP(CP_UTF8);
 #endif
-    Wordle wordle(allowedFilepath, possibleFilepath, EntropyCache);
+    Wordle wordle(allowedFilepath, possibleFilepath, cacheFilepath);
     auto stat = wordle.getStat(-1);
     stat.print();
     wordle.printTopNWords(10);
