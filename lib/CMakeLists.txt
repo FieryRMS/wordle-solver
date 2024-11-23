@@ -4,7 +4,7 @@ set(SOURCE_FILES
     wordle.h
     wordle.cpp
     trie.h
-    trie.tpp
+    trie.cpp
     ProgressBar.h
     ProgressBar.cpp
 )

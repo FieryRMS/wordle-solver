@@ -79,5 +79,3 @@ class Trie {
                string *pattern = nullptr,
                int idx = 0) const;
 };
-
-#include "trie.tpp"  // IWYU pragma: keep

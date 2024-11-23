@@ -1,4 +1,3 @@
-#pragma once
 #include <cassert>
 #include <iostream>
 #include "trie.h"
@@ -128,12 +127,12 @@ Trie<N>::Query Trie<N>::query(const string s, const ID &id) const
 
 template <size_t N>
 Trie<N>::Query::Query(const string &s, const ID &id)
-    : includes(),
-      excludes(),
-      letters(),
-      misplaced(),
+    : trieId(id),
+      includes(),
       includesCount(0),
-      trieId(id)
+      misplaced(),
+      excludes(),
+      letters()
 {
     parse(s);
 }
@@ -474,3 +473,6 @@ string Trie<N>::Query::serialize() const
 
     return result;
 }
+
+
+template class Trie<5>;
