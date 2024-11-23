@@ -22,6 +22,7 @@ class Trie {
         void setMisplaced(const char &c, const int &idx);
         void print() const;
         bool verify(const string &word);
+        string serialize() const;
 
        private:
         Query(const string &s, const ID &id);
@@ -33,6 +34,7 @@ class Trie {
         char letters[N];
         bool verify(const char &c, const int &idx) const;
 
+        static const char delim = '#';
         friend class Trie<N>;
     };
 

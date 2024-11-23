@@ -27,11 +27,7 @@ Wordle::Wordle(const string &filepath,
              possibleFilepath,
              cacheFilepath.empty() ? EntropyCache : cacheFilepath)
 {
-    // choose a random word from the list
-    random_device rd;
-    mt19937 gen(rd());
-    uniform_int_distribution<> dis(1, wordTrie.count("", possibleID));
-    targetWord = wordTrie.getNthWord(dis(gen), possibleID);
+    setRandomTargetWord();
 }
 
 Wordle::Wordle(const string &filepath,
@@ -46,17 +42,18 @@ Wordle::Wordle(const string &filepath,
     stats.reserve(maxGuesses + 1);
 
     // check if cache exists
-    ifstream cache(cacheFilepath);
-    if (cache.is_open())
+    fstream cacheFile;
+    cacheFile.open(cacheFilepath, ios::in);
+    if (cacheFile.is_open())
     {
         string word;
         double entropy;
-        while (cache >> word >> entropy)
+        while (cacheFile >> word >> entropy)
         {
             wordTrie.insert(word, allowedID);
             wordlist.push({ entropy, word });
         }
-        cache.close();
+        cacheFile.close();
 
         cout << "WARN: Using cached entropy values from "
                 "file: "
@@ -111,15 +108,18 @@ Wordle::Wordle(const string &filepath,
     cout << "Pre-calculating entropy..." << endl;
     getTopNWords(0, true);
     // save cache
-    ofstream cache_out(cacheFilepath);
-    auto wordlist_copy = wordlist;
-    while (!wordlist_copy.empty())
+    cacheFile.open(cacheFilepath, ios::out | ios::trunc);
+    cache.wordlistCache = wordlist;
+    while (!wordlist.empty())
     {
-        auto word = wordlist_copy.top();
-        wordlist_copy.pop();
-        cache_out << word.second << " " << setprecision(17) << word.first
+        auto word = wordlist.top();
+        wordlist.pop();
+        cacheFile << word.second << " " << setprecision(17) << word.first
                   << endl;
     }
+    cacheFile.close();
+
+    wordlist = cache.wordlistCache;
 }
 
 bool Wordle::isWordValid(const string &word)
@@ -307,7 +307,8 @@ void Wordle::Stat::print() const
          << fixed << setprecision(2) << remainingBits << " bits" << endl;
 }
 
-vector<pair<double, string>> Wordle::getTopNWords(int n, bool showProgress)
+vector<pair<double, string>> Wordle::getTopNWords(const int n,
+                                                  bool showProgress)
 {
     // we assume it is sorted
     // we first calculate for uninitialized words
@@ -321,6 +322,23 @@ vector<pair<double, string>> Wordle::getTopNWords(int n, bool showProgress)
     priority_queue<double> topEntropy;
     vector<pair<double, string>> updatedWords;
     auto query = getStat(-1).query;
+
+    // check if result exists in cache
+    if (cache.TopWordsCache.contains(query.serialize()))
+    {
+        auto result = cache.TopWordsCache[query.serialize()];
+        if (result.n >= n)
+        {
+            if (showProgress)
+            {
+                progressBar.finish();
+                cout << "cache hit!" << endl;
+            }
+            int final_n = min(n, (int)result.words.size());
+            return vector<pair<double, string>>(result.words.begin(),
+                                                result.words.begin() + final_n);
+        }
+    }
 
     auto isInWordSpace = [&query, this](const string &word) {
         // if it exists in the possible words and it matches the query
@@ -371,16 +389,24 @@ vector<pair<double, string>> Wordle::getTopNWords(int n, bool showProgress)
 
     vector<pair<double, string>> result;
     result.reserve(n);
+    int final_n = n;
     while (!topWords.empty())
     {
         auto word = topWords.top();
         topWords.pop();
         if (feq(word.first, 0) && !isInWordSpace(word.second)) continue;
-        if (n) result.push_back(word), n--;
+        if (final_n) result.push_back(word), final_n--;
         wordlist.push(word);
     }
 
     if (showProgress) progressBar.finish();
+
+    if (n != 0)
+        cache.TopWordsCache[query.serialize()] = {
+            .words = result,
+            .n = n,
+        };
+
     return result;
 }
 
@@ -401,4 +427,23 @@ void Wordle::printTopNWords(int n)
     for (auto &word : topWords)
         cout << setw(titleWidth) << "" << word.second << " | " << setw(numWidth)
              << fixed << setprecision(2) << word.first << endl;
+}
+
+void Wordle::setRandomTargetWord()
+{
+    random_device rd;
+    mt19937 gen(rd());
+    uniform_int_distribution<> dis(1, wordTrie.count("", possibleID));
+    targetWord = wordTrie.getNthWord(dis(gen), possibleID);
+}
+
+void Wordle::reset()
+{
+    guesses = 0;
+    status = GameStatus::ONGOING;
+    wordlist = cache.wordlistCache;
+    auto stat = getStat(0);
+    stats.clear();
+    stats.push_back(stat);
+    setRandomTargetWord();
 }

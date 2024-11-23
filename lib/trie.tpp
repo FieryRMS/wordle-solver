@@ -128,7 +128,12 @@ Trie<N>::Query Trie<N>::query(const string s, const ID &id) const
 
 template <size_t N>
 Trie<N>::Query::Query(const string &s, const ID &id)
-    : includes(), excludes(), letters(), misplaced(), includesCount(0), trieId(id)
+    : includes(),
+      excludes(),
+      letters(),
+      misplaced(),
+      includesCount(0),
+      trieId(id)
 {
     parse(s);
 }
@@ -434,4 +439,38 @@ bool Trie<N>::Query::verify(const string &word)
     }
     for (auto &i : included) includes[i]++, includesCount++;
     return flag;
+}
+
+template <size_t N>
+string Trie<N>::Query::serialize() const
+{
+    string result = "";
+
+    // letters
+    for (int i = 0; i < N; i++)
+    {
+        if (letters[i]) result += letters[i];
+        else result += '.';
+    }
+
+    result += delim;
+    // includes
+    for (int i = 0; i < 26; i++)
+        if (includes[i]) result += 'a' + i, result += to_string(includes[i]);
+
+    result += delim;
+    // excludes
+    for (int i = 0; i < 26; i++)
+        if (excludes[i]) result += 'a' + i;
+
+    result += delim;
+    // misplaced
+    for (int i = 0; i < N; i++)
+    {
+        result += to_string(i);
+        for (int j = 0; j < 26; j++)
+            if (misplaced[i][j]) result += 'a' + j;
+    }
+
+    return result;
 }

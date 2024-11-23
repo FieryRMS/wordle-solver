@@ -55,6 +55,7 @@ class Wordle {
     bool isGameOver() const { return status != GameStatus::ONGOING; }
     void printPossibleWords() const;
     void printTopNWords(int n);
+    void reset();
 
     // Getters
     int getGuesses() const { return guesses; }
@@ -64,15 +65,25 @@ class Wordle {
     GameStatus getStatus() const { return status; }
     vector<string> getWords(int i) const;
     double getEntropy(int i, string guess) const;
-    vector<pair<double, string>> getTopNWords(int n, bool showProgress = false);
+    vector<pair<double, string>> getTopNWords(const int n, bool showProgress = false);
 
     // Setters
     void setTargetWord(const string &word) { targetWord = word; }
+    void setRandomTargetWord();
 
    private:
     Trie<N>::Query getUpdatedQuery(const string &guess,
                                    const vector<TileType> &result,
                                    Trie<N>::Query query);
+
+    struct TopWords {
+        vector<pair<double, string>> words;
+        int n;
+    };
+    struct Cache {
+        priority_queue<pair<double, string>> wordlistCache;
+        map<string, TopWords> TopWordsCache;
+    };
 
     string targetWord;
     int guesses;
@@ -83,4 +94,5 @@ class Wordle {
     Trie<N>::ID possibleID = Trie<N>::ID::ALLOWED;
     vector<Stat> stats;
     priority_queue<pair<double, string>> wordlist;
+    Cache cache;
 };
