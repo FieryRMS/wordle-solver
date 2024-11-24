@@ -53,6 +53,9 @@ class Trie {
     struct Node {
         Node *children[26];
         int count[2];
+        int letterCntAtPos[2][N][26];
+        int WordCountWithLetter[2][26];
+        int letterOccuredAtleast[2][26][N + 1];
         bool isEnd;
         Node();
 
@@ -71,8 +74,9 @@ class Trie {
     static int index(const char &c);
     int _count(Query &query,
                Node *node,
-               vector<string> *result,
-               string *word = nullptr,
+               string &word,
+               int &calls,
+               vector<string> *result = nullptr,
                const string *guess = nullptr,
                set<int> (*guessLetters)[26] = nullptr,
                map<string, int> *memo = nullptr,

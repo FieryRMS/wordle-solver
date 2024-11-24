@@ -143,7 +143,7 @@ TEST(WORDLE, COUNT2)
     EXPECT_EQ(stat.count, 14855);
 
     stat = wordle.guess("warns");
-    EXPECT_EQ(stat.count, 308);
+    ASSERT_EQ(stat.count, 308);
 
     vector<string> result;
     stat = wordle.guess("srsly");

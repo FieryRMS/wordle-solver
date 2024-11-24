@@ -1,6 +1,6 @@
+#include "trie.h"
 #include <cassert>
 #include <iostream>
-#include "trie.h"
 
 using namespace std;
 
@@ -11,7 +11,8 @@ Trie<N>::Trie()
 }
 
 template <size_t N>
-Trie<N>::Node::Node() : children(), count(), isEnd(false)
+Trie<N>::Node::Node()
+    : children(), count(), letterCntAtPos(), WordCountWithLetter(), isEnd(false)
 {}
 
 template <size_t N>
@@ -48,11 +49,27 @@ void Trie<N>::insert(const string &word, const ID &id)
 
     Node *node = root;
     node->count[id]++;
-    for (auto &c : word)
+    for (int i = 0; i < N; i++)
     {
-        int i = index(c);
-        if (!node->children[i]) node->children[i] = new Node();
-        node = node->children[i];
+        int occurences[26] = { 0 };
+        bool seen[26] = { 0 };
+        for (int j = 0; j < N; j++)
+        {
+            node->letterCntAtPos[id][j][index(word[j])]++;
+            if (j >= i && !seen[index(word[j])])
+            {
+                node->WordCountWithLetter[id][index(word[j])]++;
+                seen[index(word[j])] = true;
+            }
+
+            occurences[index(word[j])]++;
+            node->letterOccuredAtleast[id][index(word[j])]
+                                      [occurences[index(word[j])]]++;
+        }
+
+        if (!node->children[index(word[i])])
+            node->children[index(word[i])] = new Node();
+        node = node->children[index(word[i])];
         node->count[id]++;
     }
     node->isEnd = true;
@@ -252,19 +269,19 @@ void Trie<N>::Query::setMisplaced(const char &c, const int &idx)
 template <size_t N>
 int Trie<N>::count(Query query, vector<string> *result) const
 {
-    string *word = nullptr;
-    if (result) word = new string(N, '.');
-    return _count(query, root, result, word);
+    string word(N, '.');
+    int calls = 0;
+    return _count(query, root, word, calls, result);
 }
-
 template <size_t N>
 int Trie<N>::_count(
     Query &query,
     Node *node,
+    string &word,
+    int &calls,
 
     // provide below params if you want to store the words
     vector<string> *result,
-    string *word,
 
     // provide the below params if you want to calculate patterns
     const string *guess,
@@ -274,15 +291,36 @@ int Trie<N>::_count(
 
     int idx) const
 {
+    calls++;
     if (idx == N)
     {
-        if (result && word) result->push_back(*word);
+        if (result) result->push_back(word);
         if (memo && pattern) (*memo)[*pattern]++;
         return node->count[query.trieId];  // or node->isEnd?
     }
 
     // not enough letters left
     if (query.includesCount > N - idx) return 0;
+
+    for (int i = idx; i < 5; i++)
+    {
+        // fixed letter, but no letter exists in subtree
+        if (query.letters[i] &&
+            node->letterCntAtPos[query.trieId][i][index(query.letters[i])] == 0)
+            return 0;
+    }
+    for (int i = 0; i < 26; i++)
+    {
+        // includes letter, but subtree does not have enough
+        if (query.includes[i] &&
+            !node->letterOccuredAtleast[query.trieId][i][query.includes[i]])
+            return 0;
+        // excludes letter, but all of subtree has it
+        if (query.excludes[i] && !query.includes[i] &&
+            node->WordCountWithLetter[query.trieId][i] ==
+                node->count[query.trieId])
+            return 0;
+    }
 
     int sum = 0;
     bool flag = false;
@@ -296,7 +334,7 @@ int Trie<N>::_count(
         // prepare to traverse the next node
         if (query.includes[i])
             query.includes[i]--, query.includesCount--, flag = true;
-        if (word) (*word)[idx] = 'a' + i;
+        word[idx] = 'a' + i;
 
         int removedIdx = -1;
         char prevPattern = -1, prevMissPattern = -1;
@@ -342,11 +380,11 @@ int Trie<N>::_count(
         }
 
         // traverse the next node
-        sum += _count(query, node->children[i], result, word, guess,
+        sum += _count(query, node->children[i], word, calls, result, guess,
                       guessLetters, memo, pattern, idx + 1);
 
         // undo the changes
-        if (word) (*word)[idx] = '.';
+        word[idx] = '.';
         if (flag) query.includes[i]++, query.includesCount++, flag = false;
 
         if (removedIdx != -1 && prevMissPattern != -1)
@@ -398,11 +436,13 @@ map<string, int> Trie<N>::getPatternsCounts(const string &guess,
     string pattern(N, TileType::NONE);
     set<int> guessLetters[26];
     string word(N, '.');
+    int calls = 0;
 
     for (int i = N - 1; i >= 0; i--) guessLetters[index(guess[i])].insert(i);
 
-    _count(SampleSpace, root, nullptr, &word, &guess, &guessLetters, &memo,
-           &pattern);
+    _count(SampleSpace, root, word, calls, nullptr, &guess, &guessLetters,
+           &memo, &pattern);
+    // cout << "Calls: " << calls << endl;
     return memo;
 }
 
@@ -473,6 +513,5 @@ string Trie<N>::Query::serialize() const
 
     return result;
 }
-
 
 template class Trie<5>;
