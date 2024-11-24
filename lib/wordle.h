@@ -30,12 +30,19 @@ class Wordle {
         int count;
         double patternProb;
         double bits;
-        double expectedBits;
+        double entropy;
         double remainingBits;
         Trie<N>::Query query;
         bool valid = false;
 
         void print() const;
+    };
+    struct Word {
+        string word;
+        double entropy;
+        double maxEntropy;
+
+        bool operator<(const Word &other) const;
     };
 
    public:
@@ -66,9 +73,8 @@ class Wordle {
     string getTargetWord() const { return targetWord; }
     GameStatus getStatus() const { return status; }
     vector<string> getWords(int i) const;
-    double getEntropy(int i, string guess) const;
-    vector<pair<double, string>> getTopNWords(const int n,
-                                              bool showProgress = false);
+    Word getEntropy(int i, string guess) const;
+    vector<Word> getTopNWords(const int n, bool showProgress = false);
 
     // Setters
     void setTargetWord(const string &word) { targetWord = word; }
@@ -81,10 +87,10 @@ class Wordle {
 
     struct TopWords {
         int n;
-        vector<pair<double, string>> words;
+        vector<Word> words;
     };
     struct Cache {
-        priority_queue<pair<double, string>> wordlistCache;
+        priority_queue<Word> wordlistCache;
         map<string, TopWords> TopWordsCache;
         string cachePath;
     };
@@ -97,6 +103,6 @@ class Wordle {
     Trie<N>::ID allowedID = Trie<N>::ID::ALLOWED;
     Trie<N>::ID possibleID = Trie<N>::ID::ALLOWED;
     vector<Stat> stats;
-    priority_queue<pair<double, string>> wordlist;
+    priority_queue<Word> wordlist;
     Cache cache;
 };

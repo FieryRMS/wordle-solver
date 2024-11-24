@@ -30,7 +30,7 @@ void Simulator::run()
         progressBar.update(i);
         while (!wordle.isGameOver())
         {
-            string guess = wordle.getTopNWords(1)[0].second;
+            string guess = wordle.getTopNWords(1)[0].word;
             wordle.guess(guess);
         }
 

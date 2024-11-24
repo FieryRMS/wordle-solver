@@ -37,11 +37,10 @@ int main()
         while (true)
         {
             stat.print();
-            wordle.setTargetWord("cider");
             if (stat.count <= 50) wordle.printPossibleWords();
             wordle.printTopNWords(10);
 
-            stat.query.print();
+            // stat.query.print();
 
             if (wordle.isGameOver()) break;
 
@@ -76,6 +75,7 @@ int main()
         }
 
         cout << "Resetting game..." << endl << endl;
+        wordle.saveCache();
         wordle.reset();
         wordle.setRandomTargetWord();
     }

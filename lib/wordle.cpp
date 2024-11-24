@@ -57,7 +57,12 @@ Wordle::Wordle(const string &allowedFilepath,
     while (allowedFile >> allowedWord)
     {
         wordTrie.insert(allowedWord, allowedID);
-        if (!cached) wordlist.push({ -1, allowedWord });
+        if (!cached)
+            wordlist.push({
+                .word = allowedWord,
+                .entropy = -1,
+                .maxEntropy = -1,
+            });
     }
     allowedFile.close();
 
@@ -84,7 +89,7 @@ Wordle::Wordle(const string &allowedFilepath,
         .count = count,
         .patternProb = 0,
         .bits = 0,
-        .expectedBits = 0,
+        .entropy = 0,
         .remainingBits = log2(count),
         .query = wordTrie.query("", possibleID),
         .valid = true,
@@ -110,20 +115,28 @@ bool Wordle::loadCache()
          << filesystem::absolute(cache.cachePath) << endl;
 
     string word;
-    double entropy;
-    while (cacheFile >> word >> entropy && word != "#####")
-        cache.wordlistCache.push({ entropy, word });
+    double entropy, maxEntropy;
+    while (cacheFile >> word >> entropy >> maxEntropy && word != "#####")
+        cache.wordlistCache.push({
+            .word = word,
+            .entropy = entropy,
+            .maxEntropy = maxEntropy,
+        });
 
     string query;
     int n, count;
     while (cacheFile >> query >> n >> count)
     {
-        vector<pair<double, string>> words;
+        vector<Word> words;
         words.reserve(count);
         for (int i = 0; i < count; i++)
         {
-            cacheFile >> word >> entropy;
-            words.push_back({ entropy, word });
+            cacheFile >> word >> entropy >> maxEntropy;
+            words.push_back({
+                .word = word,
+                .entropy = entropy,
+                .maxEntropy = maxEntropy,
+            });
         }
         cache.TopWordsCache[query] = {
             .n = n,
@@ -145,19 +158,19 @@ bool Wordle::saveCache() const
     {
         auto word = cp.top();
         cp.pop();
-        cacheFile << word.second << " " << setprecision(17) << word.first
-                  << endl;
+        cacheFile << word.word << " " << setprecision(17) << word.entropy << " "
+                  << setprecision(17) << word.maxEntropy << endl;
     }
 
-    cacheFile << "#####" << " " << -1 << endl;
+    cacheFile << "#####" << " " << -1 << " " << -1 << endl;
 
     for (auto &[query, topWords] : cache.TopWordsCache)
     {
         cacheFile << query << " " << topWords.n << " " << topWords.words.size()
                   << endl;
         for (auto &word : topWords.words)
-            cacheFile << word.second << " " << setprecision(17) << word.first
-                      << " ";
+            cacheFile << word.word << " " << setprecision(17) << word.entropy
+                      << " " << setprecision(17) << word.maxEntropy << " ";
         cacheFile << endl;
     }
 
@@ -188,7 +201,7 @@ Wordle::Stat Wordle::guess(const string &guess)
             .count = 0,
             .patternProb = 0,
             .bits = 0,
-            .expectedBits = 0,
+            .entropy = 0,
             .remainingBits = 0,
             .query = wordTrie.query("", allowedID),
             .valid = false,
@@ -238,7 +251,7 @@ Wordle::Stat Wordle::guess(const string &guess)
         .count = count,
         .patternProb = (double)count / prevCount,
         .bits = bits,
-        .expectedBits = getEntropy(-1, guess),
+        .entropy = getEntropy(-1, guess).entropy,
         .remainingBits = log2(count),
         .query = query,
         .valid = true,
@@ -316,27 +329,25 @@ vector<string> Wordle::getWords(int i) const
     return result;
 }
 
-double Wordle::getEntropy(int i, string guess) const
+Wordle::Word Wordle::getEntropy(int i, string guess) const
 {
     auto stat = getStat(i);
     auto patterns = wordTrie.getPatternsCounts(guess, stat.query);
     int total = stat.count;
     // E = sum P(x) * log2(1 / P(x)) where x is the pattern
     // log2(1 / P(x)) = - log2(P(x)) = - log2(count / total) = log2(total) - log2(count)
-    double entropy = 0;
+    double entropy = 0, maxEntropy = log2(patterns.size());
     for (auto &pattern : patterns)
     {
         double prob = (double)pattern.second / total;
         entropy += prob * (log2(total) - log2(pattern.second));
     }
-    if (!feq(entropy, 0) && entropy < 1)
-    {
-        cerr << "ENTROPY: " << entropy << " for guess: " << guess << endl;
-        for (auto &pattern : patterns)
-            cerr << pattern.first << " " << pattern.second << endl;
-        cerr << "TOTAL: " << total << endl;
-    }
-    return entropy;
+
+    return {
+        .word = guess,
+        .entropy = entropy,
+        .maxEntropy = maxEntropy,
+    };
 }
 void Wordle::Stat::print() const
 {
@@ -354,14 +365,13 @@ void Wordle::Stat::print() const
          << fixed << setprecision(2) << patternProb << endl;
     cout << setw(titleWidth) << "INFORMATION GAINED: " << setw(numWidth)
          << fixed << setprecision(2) << bits << " bits" << endl;
-    cout << setw(titleWidth) << "EXPECTED GAIN: " << setw(numWidth) << fixed
-         << setprecision(2) << expectedBits << " bits" << endl;
+    cout << setw(titleWidth) << "EXPECTED GAIN (ENTROPY): " << setw(numWidth)
+         << fixed << setprecision(2) << entropy << " bits" << endl;
     cout << setw(titleWidth) << "REMAINING INFORMATION: " << setw(numWidth)
          << fixed << setprecision(2) << remainingBits << " bits" << endl;
 }
 
-vector<pair<double, string>> Wordle::getTopNWords(const int n,
-                                                  bool showProgress)
+vector<Wordle::Word> Wordle::getTopNWords(const int n, bool showProgress)
 {
     // we assume it is sorted
     // we first calculate for uninitialized words
@@ -369,6 +379,12 @@ vector<pair<double, string>> Wordle::getTopNWords(const int n,
     // we know that entropy can never be more than the previous entropy,
     // therefore best case senario new=prev
     // So we can skip when we have n elements, and the smallest element is >= next elements old entropy
+    // TRY 2:
+    // the above idea was slightly wrong. Entropy can increase if even when we remove information
+    // but each word can get a max entropy when all patterns have equal probability, ie the words are equally distributed
+    // among all the patterns.
+    // since number of words can only decrease, max entropy can only decrease also.
+    // max entropy is just log2(number of patterns)
     ProgressBar progressBar(wordlist.size());
     if (showProgress) progressBar.update(0);
 
@@ -377,17 +393,15 @@ vector<pair<double, string>> Wordle::getTopNWords(const int n,
     // check if result exists in cache
     if (cache.TopWordsCache.contains(query.serialize()))
     {
-        auto result = cache.TopWordsCache[query.serialize()];
-        if (result.n >= n)
+        auto &result = cache.TopWordsCache[query.serialize()];
+        if (result.n >= n || result.words.size() < result.n)
         {
             if (showProgress)
             {
                 progressBar.finish();
                 cout << "cache hit!" << endl;
             }
-            int final_n = min(n, (int)result.words.size());
-            return vector<pair<double, string>>(result.words.begin(),
-                                                result.words.begin() + final_n);
+            return result.words;
         }
     }
 
@@ -396,24 +410,31 @@ vector<pair<double, string>> Wordle::getTopNWords(const int n,
         return wordTrie.count(word, possibleID) && query.verify(word);
     };
 
-    priority_queue<double> topEntropy;
-    vector<pair<double, string>> updatedWords;
+    auto comp = [&isInWordSpace](const Word &a, const Word &b) {
+        if (!feq(a.entropy, b.entropy)) return a.entropy > b.entropy;
+        if (isInWordSpace(a.word)) return true;
+        return false;
+    };
+
+    priority_queue<Word, vector<Word>, decltype(comp)> topWords(comp);
+    vector<Word> updatedWords;
     for (int i = 0; !wordlist.empty(); i++)
     {
         // either -1 (uninitialized) or not enough words
         // or the smallest updated entropy in top n (topEntropy)
-        // is less than the next word's old entropy (wordlist)
-        // [meaning we can possibly get a better entropy]
-        if (feq(wordlist.top().first, -1) ||
-            (n != 0 && (topEntropy.size() < n ||
-                        wordlist.top().first > -topEntropy.top() || 1)))
+        // is leq the next word's max entropy (wordlist)
+        // [meaning we can possibly get a better or equal entropy]
+        // [equal because we need to rank words in search space higher]
+        if (feq(wordlist.top().maxEntropy, -1) ||
+            (n != 0 && (topWords.size() < n ||
+                        wordlist.top().maxEntropy >= topWords.top().entropy)))
         {
             auto word = wordlist.top();
             wordlist.pop();
-            word.first = getEntropy(-1, word.second);  // expensive
-            if (feq(word.first, 0) && !isInWordSpace(word.second)) continue;
-            topEntropy.push(-word.first);
-            if (topEntropy.size() > n) topEntropy.pop();
+            word = getEntropy(-1, word.word);  // expensive
+            if (feq(word.maxEntropy, 0) && !isInWordSpace(word.word)) continue;
+            topWords.push(word);
+            if (topWords.size() > n) topWords.pop();
             updatedWords.push_back(word);
         }
         else break;
@@ -423,36 +444,14 @@ vector<pair<double, string>> Wordle::getTopNWords(const int n,
 
     for (auto &word : updatedWords) wordlist.push(word);
 
-    auto comp = [&isInWordSpace](const pair<double, string> &a,
-                                 const pair<double, string> &b) {
-        if (!feq(a.first, b.first)) return a.first < b.first;
-        if (isInWordSpace(a.second)) return false;
-        return true;
-    };
-    priority_queue<pair<double, string>, vector<pair<double, string>>,
-                   decltype(comp)>
-        topWords(comp);
-
-    // if n=0 skip, else get top n words and include scores that are equal to
-    // the last element (it may contain a word in the query)
-    while (
-        n != 0 && !wordlist.empty() &&
-        (topWords.size() < n || feq(wordlist.top().first, -topEntropy.top())))
-        topWords.push(wordlist.top()), wordlist.pop();
-
-    vector<pair<double, string>> result;
+    vector<Word> result;
     result.reserve(n);
-    int final_n = n;
     while (!topWords.empty())
     {
-        auto word = topWords.top();
+        result.push_back(topWords.top());
         topWords.pop();
-        if (feq(word.first, 0) && !isInWordSpace(word.second)) continue;
-        if (final_n) result.push_back(word), final_n--;
-        wordlist.push(word);
     }
-
-    if (showProgress) progressBar.finish();
+    reverse(result.begin(), result.end());
 
     if (n != 0)
         cache.TopWordsCache[query.serialize()] = {
@@ -460,6 +459,7 @@ vector<pair<double, string>> Wordle::getTopNWords(const int n,
             .words = result,
         };
 
+    if (showProgress) progressBar.finish();
     return result;
 }
 
@@ -478,8 +478,8 @@ void Wordle::printTopNWords(int n)
     string title = "TOP " + to_string(n) + " WORDS: ";
     cout << setw(titleWidth) << title << "WORDS | ENTROPY" << endl;
     for (auto &word : topWords)
-        cout << setw(titleWidth) << "" << word.second << " | " << setw(numWidth)
-             << fixed << setprecision(2) << word.first << endl;
+        cout << setw(titleWidth) << "" << word.word << " | " << setw(numWidth)
+             << fixed << setprecision(2) << word.entropy << endl;
 }
 
 void Wordle::setRandomTargetWord()
@@ -498,4 +498,10 @@ void Wordle::reset()
     auto stat = getStat(0);
     stats.clear();
     stats.push_back(stat);
+}
+
+bool Wordle::Word::operator<(const Word &other) const
+{
+    if (feq(maxEntropy, other.maxEntropy)) return entropy < other.entropy;
+    return maxEntropy < other.maxEntropy;
 }
