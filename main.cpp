@@ -24,8 +24,11 @@ int main()
     if (choice == 'y')
     {
         sim.run();
-        return 0;
+        wordle.saveCache();
+        wordle.reset();
+        wordle.setRandomTargetWord();
     }
+
     cout << "Starting game..." << endl;
 
     while (true)
@@ -34,8 +37,11 @@ int main()
         while (true)
         {
             stat.print();
+            wordle.setTargetWord("cider");
             if (stat.count <= 50) wordle.printPossibleWords();
             wordle.printTopNWords(10);
+
+            stat.query.print();
 
             if (wordle.isGameOver()) break;
 

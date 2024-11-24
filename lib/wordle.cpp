@@ -30,7 +30,7 @@ Wordle::Wordle(const string &filepath,
     setRandomTargetWord();
 }
 
-Wordle::Wordle(const string &filepath,
+Wordle::Wordle(const string &allowedFilepath,
                const string &targetWord,
                const string &possibleFilepath,
                const string &cacheFilepath)
@@ -40,55 +40,40 @@ Wordle::Wordle(const string &filepath,
       wordTrie()
 {
     stats.reserve(maxGuesses + 1);
+    cache.cachePath = cacheFilepath;
 
     // check if cache exists
-    fstream cacheFile;
-    cacheFile.open(cacheFilepath, ios::in);
-    if (cacheFile.is_open())
-    {
-        string word;
-        double entropy;
-        while (cacheFile >> word >> entropy)
-        {
-            wordTrie.insert(word, allowedID);
-            wordlist.push({ entropy, word });
-        }
-        cacheFile.close();
+    bool cached = loadCache();
+    if (cached) wordlist = cache.wordlistCache;
 
-        cout << "WARN: Using cached entropy values from "
-                "file: "
-             << filesystem::absolute(cacheFilepath) << endl;
-    }
-    else
+    ifstream allowedFile(allowedFilepath);
+    if (!allowedFile.is_open())
     {
-        ifstream file(filepath);
-        if (!file.is_open())
-        {
-            cerr << "Error opening file: " << filepath << endl;
-            exit(1);
-        }
-
-        string word;
-        while (file >> word)
-        {
-            wordTrie.insert(word, allowedID);
-            wordlist.push({ -1, word });
-        }
-        file.close();
+        cerr << "Error opening file: " << allowedFilepath << endl;
+        exit(1);
     }
+
+    string allowedWord;
+    while (allowedFile >> allowedWord)
+    {
+        wordTrie.insert(allowedWord, allowedID);
+        if (!cached) wordlist.push({ -1, allowedWord });
+    }
+    allowedFile.close();
 
     if (!possibleFilepath.empty())
     {
         possibleID = Trie<N>::ID::POSSIBLE;
-        ifstream file(possibleFilepath);
-        if (!file.is_open())
+        ifstream possibleFile(possibleFilepath);
+        if (!possibleFile.is_open())
         {
             cerr << "Error opening file: " << possibleFilepath << endl;
             exit(1);
         }
 
-        string word;
-        while (file >> word) wordTrie.insert(word, possibleID);
+        string possibleWord;
+        while (possibleFile >> possibleWord)
+            wordTrie.insert(possibleWord, possibleID);
     }
 
     int count = wordTrie.count("", possibleID);
@@ -105,21 +90,80 @@ Wordle::Wordle(const string &filepath,
         .valid = true,
     });
 
-    cout << "Pre-calculating entropy..." << endl;
-    getTopNWords(0, true);
     // save cache
-    cacheFile.open(cacheFilepath, ios::out | ios::trunc);
-    cache.wordlistCache = wordlist;
-    while (!wordlist.empty())
+    if (!cached)
     {
-        auto word = wordlist.top();
-        wordlist.pop();
-        cacheFile << word.second << " " << setprecision(17) << word.first
-                  << endl;
+        cout << "Pre-calculating entropy..." << endl;
+        getTopNWords(0, true);
+        cache.wordlistCache = wordlist;
+        saveCache();
+    }
+}
+
+bool Wordle::loadCache()
+{
+    fstream cacheFile(cache.cachePath, ios::in);
+    if (!cacheFile.is_open()) return false;
+
+    cout << "WARN: Using cached entropy values from "
+            "file: "
+         << filesystem::absolute(cache.cachePath) << endl;
+
+    string word;
+    double entropy;
+    while (cacheFile >> word >> entropy && word != "#####")
+        cache.wordlistCache.push({ entropy, word });
+
+    string query;
+    int n, count;
+    while (cacheFile >> query >> n >> count)
+    {
+        vector<pair<double, string>> words;
+        words.reserve(count);
+        for (int i = 0; i < count; i++)
+        {
+            cacheFile >> word >> entropy;
+            words.push_back({ entropy, word });
+        }
+        cache.TopWordsCache[query] = {
+            .n = n,
+            .words = words,
+        };
     }
     cacheFile.close();
 
-    wordlist = cache.wordlistCache;
+    return true;
+}
+
+bool Wordle::saveCache() const
+{
+    fstream cacheFile(cache.cachePath, ios::out | ios::trunc);
+    if (!cacheFile.is_open()) return false;
+
+    auto cp = cache.wordlistCache;
+    while (!cp.empty())
+    {
+        auto word = cp.top();
+        cp.pop();
+        cacheFile << word.second << " " << setprecision(17) << word.first
+                  << endl;
+    }
+
+    cacheFile << "#####" << " " << -1 << endl;
+
+    for (auto &[query, topWords] : cache.TopWordsCache)
+    {
+        cacheFile << query << " " << topWords.n << " " << topWords.words.size()
+                  << endl;
+        for (auto &word : topWords.words)
+            cacheFile << word.second << " " << setprecision(17) << word.first
+                      << " ";
+        cacheFile << endl;
+    }
+
+    cacheFile.close();
+
+    return true;
 }
 
 bool Wordle::isWordValid(const string &word)
@@ -241,6 +285,7 @@ Trie<Wordle::N>::Query Wordle::getUpdatedQuery(const string &guess,
         {
             case TileType::CORRECT:
                 query.setCorrect(guess[i], i);
+                includes += guess[i];
                 break;
             case TileType::MISPLACED:
                 query.setMisplaced(guess[i], i);
@@ -248,6 +293,7 @@ Trie<Wordle::N>::Query Wordle::getUpdatedQuery(const string &guess,
                 break;
             case TileType::WRONG:
                 query.exclude(guess[i]);
+                query.setMisplaced(guess[i], i);
                 break;
             default:
                 throw invalid_argument("Invalid tile type");
@@ -277,13 +323,20 @@ double Wordle::getEntropy(int i, string guess) const
     int total = stat.count;
     // E = sum P(x) * log2(1 / P(x)) where x is the pattern
     // log2(1 / P(x)) = - log2(P(x)) = - log2(count / total) = log2(total) - log2(count)
-    double expectedBits = 0;
+    double entropy = 0;
     for (auto &pattern : patterns)
     {
         double prob = (double)pattern.second / total;
-        expectedBits += prob * (log2(total) - log2(pattern.second));
+        entropy += prob * (log2(total) - log2(pattern.second));
     }
-    return expectedBits;
+    if (!feq(entropy, 0) && entropy < 1)
+    {
+        cerr << "ENTROPY: " << entropy << " for guess: " << guess << endl;
+        for (auto &pattern : patterns)
+            cerr << pattern.first << " " << pattern.second << endl;
+        cerr << "TOTAL: " << total << endl;
+    }
+    return entropy;
 }
 void Wordle::Stat::print() const
 {
@@ -353,7 +406,7 @@ vector<pair<double, string>> Wordle::getTopNWords(const int n,
         // [meaning we can possibly get a better entropy]
         if (feq(wordlist.top().first, -1) ||
             (n != 0 && (topEntropy.size() < n ||
-                        wordlist.top().first > -topEntropy.top())))
+                        wordlist.top().first > -topEntropy.top() || 1)))
         {
             auto word = wordlist.top();
             wordlist.pop();
@@ -403,8 +456,8 @@ vector<pair<double, string>> Wordle::getTopNWords(const int n,
 
     if (n != 0)
         cache.TopWordsCache[query.serialize()] = {
-            .words = result,
             .n = n,
+            .words = result,
         };
 
     return result;

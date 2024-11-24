@@ -256,10 +256,11 @@ TEST(WORDLE, COUNT4)
     EXPECT_EQ(result, expected);
 
     stat = wordle.guess("skees");
-    EXPECT_EQ(stat.count, 7);
+    EXPECT_EQ(stat.count, 2);
     result = wordle.getWords(-1);
     expected = {
-        "cuzes", "eches", "eques", "fuzes", "fyces", "gyves", "juves",
+        "eches",
+        "eques",
     };
     EXPECT_EQ(result, expected);
 }

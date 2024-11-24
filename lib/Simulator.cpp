@@ -21,6 +21,7 @@ void Simulator::run()
     ProgressBar progressBar(words.size());
     int scores[7] = { 0 };
     double averageScore = 0;
+    vector<string> lostWords;
     for (int i = 0; i < words.size(); i++)
     {
         wordle.reset();
@@ -34,7 +35,11 @@ void Simulator::run()
         }
 
         int score = wordle.getGuesses();
-        if (wordle.getStatus() == Wordle::GameStatus::LOST) score = 7;
+        if (wordle.getStatus() == Wordle::GameStatus::LOST)
+        {
+            score = 7;
+            lostWords.push_back(words[i]);
+        }
         scores[score - 1]++;
         averageScore += score;
     }
@@ -43,4 +48,11 @@ void Simulator::run()
     cout << "Average score: " << averageScore / words.size() << endl;
     cout << "Scores: ";
     for (int i = 0; i < 7; i++) cout << scores[i] << " ";
+    cout << endl;
+    if (!lostWords.empty())
+    {
+        cout << "Lost words: ";
+        for (auto &word : lostWords) cout << word << " ";
+        cout << endl;
+    }
 }
