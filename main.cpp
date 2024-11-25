@@ -33,6 +33,7 @@ int main()
 
     while (true)
     {
+        // wordle.setTargetWord("hello");
         auto stat = wordle.getStat(-1);
         while (true)
         {

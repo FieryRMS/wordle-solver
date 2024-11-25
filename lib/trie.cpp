@@ -308,6 +308,20 @@ int Trie<N>::_count(
         if (query.letters[i] &&
             node->letterCntAtPos[query.trieId][i][index(query.letters[i])] == 0)
             return 0;
+        // misplaced letter, but all words have it at that position
+        for (int j = 0; j < 26; j++)
+        {
+            if (query.misplaced[i][j] &&
+                node->letterCntAtPos[query.trieId][i][j] ==
+                    node->count[query.trieId])
+                return 0;
+
+            // includes letter, but all the words that do have it, have it in misplaced
+            if (query.includes[j] && query.misplaced[i][j] &&
+                node->letterCntAtPos[query.trieId][i][j] ==
+                    node->WordCountWithLetter[query.trieId][j])
+                return 0;
+        }
     }
     for (int i = 0; i < 26; i++)
     {
@@ -393,6 +407,7 @@ int Trie<N>::_count(
         if (prevPattern != -1) (*pattern)[idx] = prevPattern;
     }
 
+    // if (sum == 0) { cout << "WORD: " << word << endl; }
     return sum;
 }
 /**

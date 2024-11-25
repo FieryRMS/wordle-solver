@@ -53,8 +53,11 @@ class Trie {
     struct Node {
         Node *children[26];
         int count[2];
+        // how many words have the letter at the given position in the subtree
         int letterCntAtPos[2][N][26];
+        // how many words have the letter in the subtree after and including the current Node
         int WordCountWithLetter[2][26];
+        // how many words have atleast this many occurences of the letter in the subtree
         int letterOccuredAtleast[2][26][N + 1];
         bool isEnd;
         Node();
