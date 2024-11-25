@@ -464,7 +464,7 @@ map<string, int> Trie<N>::getPatternsCounts(const string &guess,
 template <size_t N>
 bool Trie<N>::Query::verify(const char &c, const int &idx) const
 {
-    if (excludes[index(c)] && includes[index(c)] == 0 && !letters[idx])
+    if (excludes[index(c)] && includes[index(c)] == 0)
         return false;
     if (misplaced[idx][index(c)]) return false;
     if (letters[idx] && letters[idx] != c) return false;
