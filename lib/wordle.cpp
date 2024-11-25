@@ -1,5 +1,4 @@
 #include "wordle.h"
-#include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
@@ -13,11 +12,6 @@ using namespace std;
 
 const int titleWidth = 23, numWidth = 5;
 const string EntropyCache = "entropy_cache.txt";
-
-bool feq(double a, double b)
-{
-    return fabs(a - b) < 1e-6;
-}
 
 Wordle::Wordle(const string &filepath,
                const string &possibleFilepath,
@@ -60,6 +54,7 @@ Wordle::Wordle(const string &allowedFilepath,
         if (!cached)
             wordlist.push({
                 .word = allowedWord,
+                .score = -1,
                 .entropy = -1,
                 .maxEntropy = -1,
             });
@@ -115,10 +110,12 @@ bool Wordle::loadCache()
          << filesystem::absolute(cache.cachePath) << endl;
 
     string word;
-    double entropy, maxEntropy;
-    while (cacheFile >> word >> entropy >> maxEntropy && word != "#####")
+    double score, entropy, maxEntropy;
+    while (cacheFile >> word >> score >> entropy >> maxEntropy &&
+           word != "#####")
         cache.wordlistCache.push({
             .word = word,
+            .score = score,
             .entropy = entropy,
             .maxEntropy = maxEntropy,
         });
@@ -131,9 +128,10 @@ bool Wordle::loadCache()
         words.reserve(count);
         for (int i = 0; i < count; i++)
         {
-            cacheFile >> word >> entropy >> maxEntropy;
+            cacheFile >> word >> score >> entropy >> maxEntropy;
             words.push_back({
                 .word = word,
+                .score = score,
                 .entropy = entropy,
                 .maxEntropy = maxEntropy,
             });
@@ -158,19 +156,21 @@ bool Wordle::saveCache() const
     {
         auto word = cp.top();
         cp.pop();
-        cacheFile << word.word << " " << setprecision(17) << word.entropy << " "
-                  << setprecision(17) << word.maxEntropy << endl;
+        cacheFile << word.word << " " << setprecision(17) << word.score << " "
+                  << setprecision(17) << word.entropy << " " << setprecision(17)
+                  << word.maxEntropy << endl;
     }
 
-    cacheFile << "#####" << " " << -1 << " " << -1 << endl;
+    cacheFile << "##### -1 -1 -1" << endl;
 
     for (auto &[query, topWords] : cache.TopWordsCache)
     {
         cacheFile << query << " " << topWords.n << " " << topWords.words.size()
                   << endl;
         for (auto &word : topWords.words)
-            cacheFile << word.word << " " << setprecision(17) << word.entropy
-                      << " " << setprecision(17) << word.maxEntropy << " ";
+            cacheFile << word.word << " " << setprecision(17) << word.score
+                      << " " << setprecision(17) << word.entropy << " "
+                      << setprecision(17) << word.maxEntropy << " ";
         cacheFile << endl;
     }
 
@@ -345,6 +345,7 @@ Wordle::Word Wordle::getEntropy(int i, string guess) const
 
     return {
         .word = guess,
+        .score = entropy,
         .entropy = entropy,
         .maxEntropy = maxEntropy,
     };
@@ -365,8 +366,8 @@ void Wordle::Stat::print() const
          << fixed << setprecision(2) << patternProb << endl;
     cout << setw(titleWidth) << "INFORMATION GAINED: " << setw(numWidth)
          << fixed << setprecision(2) << bits << " bits" << endl;
-    cout << setw(titleWidth) << "EXPECTED GAIN (ENTROPY): " << setw(numWidth)
-         << fixed << setprecision(2) << entropy << " bits" << endl;
+    cout << setw(titleWidth) << "ENTROPY: " << setw(numWidth) << fixed
+         << setprecision(2) << entropy << " bits" << endl;
     cout << setw(titleWidth) << "REMAINING INFORMATION: " << setw(numWidth)
          << fixed << setprecision(2) << remainingBits << " bits" << endl;
 }
@@ -405,14 +406,9 @@ vector<Wordle::Word> Wordle::getTopNWords(const int n, bool showProgress)
         }
     }
 
-    auto isInWordSpace = [&query, this](const string &word) {
-        // if it exists in the possible words and it matches the query
-        return wordTrie.count(word, possibleID) && query.verify(word);
-    };
-
-    auto comp = [&isInWordSpace](const Word &a, const Word &b) {
-        if (!feq(a.entropy, b.entropy)) return a.entropy > b.entropy;
-        if (isInWordSpace(a.word)) return true;
+    auto comp = [&query, this](const Word &a, const Word &b) {
+        if (!feq(a.score, b.score)) return a.score > b.score;
+        if (isInWordSpace(a.word, query)) return true;
         return false;
     };
 
@@ -432,7 +428,8 @@ vector<Wordle::Word> Wordle::getTopNWords(const int n, bool showProgress)
             auto word = wordlist.top();
             wordlist.pop();
             word = getEntropy(-1, word.word);  // expensive
-            if (feq(word.maxEntropy, 0) && !isInWordSpace(word.word)) continue;
+            if (feq(word.maxEntropy, 0) && !isInWordSpace(word.word, query))
+                continue;
             topWords.push(word);
             if (topWords.size() > n) topWords.pop();
             updatedWords.push_back(word);
@@ -463,6 +460,12 @@ vector<Wordle::Word> Wordle::getTopNWords(const int n, bool showProgress)
     return result;
 }
 
+bool Wordle::isInWordSpace(const string &word, Trie<N>::Query &query) const
+{
+    // if it exists in the possible words and it matches the query
+    return wordTrie.count(word, possibleID) && query.verify(word);
+}
+
 void Wordle::printPossibleWords() const
 {
     vector<string> result = getWords(-1);
@@ -476,10 +479,16 @@ void Wordle::printTopNWords(int n)
     cout << "Calculating top " << n << " words..." << endl;
     auto topWords = getTopNWords(n, true);
     string title = "TOP " + to_string(n) + " WORDS: ";
-    cout << setw(titleWidth) << title << "WORDS | ENTROPY" << endl;
+    cout << setw(titleWidth) << title << "WORDS | SCORE | ENTROPY" << endl;
     for (auto &word : topWords)
+    {
         cout << setw(titleWidth) << "" << word.word << " | " << setw(numWidth)
-             << fixed << setprecision(2) << word.entropy << endl;
+             << fixed << setprecision(2) << word.score << " | "
+             << setw(numWidth) << fixed << setprecision(2) << word.entropy
+             << endl;
+        n--;
+        if (n == 0) break;
+    }
 }
 
 void Wordle::setRandomTargetWord()

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cmath>
 #include <queue>
 #include <string>
 #include <vector>
@@ -7,6 +8,10 @@
 
 using namespace std;
 
+inline bool feq(double a, double b)
+{
+    return fabs(a - b) < 1e-6;
+}
 class Wordle {
    public:
     enum class TileType {
@@ -20,6 +25,14 @@ class Wordle {
         ONGOING,
         WON,
         LOST,
+    };
+    struct Word {
+        string word;
+        double score;
+        double entropy;
+        double maxEntropy;
+
+        bool operator<(const Word &other) const;
     };
 
    private:
@@ -36,13 +49,6 @@ class Wordle {
         bool valid = false;
 
         void print() const;
-    };
-    struct Word {
-        string word;
-        double entropy;
-        double maxEntropy;
-
-        bool operator<(const Word &other) const;
     };
 
    public:
@@ -65,6 +71,7 @@ class Wordle {
     void reset();
     bool loadCache();
     bool saveCache() const;
+    bool isInWordSpace(const string &word, Trie<N>::Query &query) const;
 
     // Getters
     int getGuesses() const { return guesses; }
@@ -74,7 +81,7 @@ class Wordle {
     GameStatus getStatus() const { return status; }
     vector<string> getWords(int i) const;
     Word getEntropy(int i, string guess) const;
-    vector<Word> getTopNWords(const int n, bool showProgress = false);
+    virtual vector<Word> getTopNWords(const int n, bool showProgress = false);
 
     // Setters
     void setTargetWord(const string &word) { targetWord = word; }

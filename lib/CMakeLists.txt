@@ -9,6 +9,8 @@ set(SOURCE_FILES
     ProgressBar.cpp
     Simulator.h
     Simulator.cpp
+    wordleRegression.h
+    wordleRegression.cpp
 )
 
 add_library(${PROJECT_NAME} STATIC ${SOURCE_FILES})
