@@ -4,7 +4,7 @@
 class Simulator {
    public:
     Simulator(const string &filepath, Wordle &wordle);
-    void run();
+    void run(int n);
 
    private:
     vector<string> words;

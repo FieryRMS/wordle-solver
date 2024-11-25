@@ -23,7 +23,7 @@ int main()
     cin >> choice;
     if (choice == 'y')
     {
-        sim.run();
+        sim.run(10);
         wordle.saveCache();
         wordle.reset();
         wordle.setRandomTargetWord();

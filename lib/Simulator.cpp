@@ -1,5 +1,6 @@
 #include "Simulator.h"
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include "ProgressBar.h"
 
@@ -16,23 +17,28 @@ Simulator::Simulator(const string &filepath, Wordle &wordle) : wordle(wordle)
     while (file >> word) words.push_back(word);
 }
 
-void Simulator::run()
+void Simulator::run(int n)
 {
     ProgressBar progressBar(words.size());
     int scores[7] = { 0 };
     double averageScore = 0;
     vector<string> lostWords;
+    vector<pair<double, int>> points;
     for (int i = 0; i < words.size(); i++)
     {
         wordle.reset();
         wordle.setTargetWord(words[i]);
 
         progressBar.update(i);
+        vector<double> remainingBits;
+        remainingBits.push_back(wordle.getStat(-1).remainingBits);
         while (!wordle.isGameOver())
         {
-            string guess = wordle.getTopNWords(1)[0].word;
-            wordle.guess(guess);
+            auto guess = wordle.getTopNWords(n)[0];
+            auto stat = wordle.guess(guess.word);
+            remainingBits.push_back(stat.remainingBits);
         }
+        remainingBits.pop_back();
 
         int score = wordle.getGuesses();
         if (wordle.getStatus() == Wordle::GameStatus::LOST)
@@ -42,6 +48,12 @@ void Simulator::run()
         }
         scores[score - 1]++;
         averageScore += score;
+        for (auto &remainingBit : remainingBits)
+        {
+            points.push_back({ remainingBit, score-- });
+            if (points.back().first == 0 && points.back().second == 2)
+                cout << words[i] << endl;
+        }
     }
     progressBar.finish();
 
@@ -55,4 +67,8 @@ void Simulator::run()
         for (auto &word : lostWords) cout << word << " ";
         cout << endl;
     }
+
+    ofstream file("points.txt", ios::trunc);
+    for (auto &point : points)
+        file << setprecision(18) << point.first << "," << point.second << endl;
 }
