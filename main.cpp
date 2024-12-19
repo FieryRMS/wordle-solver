@@ -19,9 +19,9 @@ int main()
     WordleLoop wordle(allowedFilepath, possibleFilepath, cacheFilepath);
     Simulator sim(possibleFilepath, wordle);
 
+    cout << "Run simulator? (y/n): ";
     char choice;
     cin >> choice;
-    cout << "Run simulator? (y/n): ";
     if (choice == 'y')
     {
         sim.run(100);

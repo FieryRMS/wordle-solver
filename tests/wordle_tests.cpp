@@ -454,27 +454,7 @@ TEST(TRIE, PATTERNCOUNTS3)
     };
 
     ASSERT_EQ(result.size(), expected.size());
-
-    // too big to compare and show the difference, break it down
-    const int limit = 20;
-    vector<unordered_map<string, int>> result_parts;
-    vector<unordered_map<string, int>> expected_parts;
-    auto itr = result.begin(), ite = expected.begin();
-    while (itr != result.end())
-    {
-        unordered_map<string, int> r, e;
-        for (int i = 0; i < limit && itr != result.end(); i++, itr++, ite++)
-            r.insert(*itr), e.insert(*ite);
-
-        result_parts.push_back(r);
-        expected_parts.push_back(e);
-    }
-
-    for (int i = 0; i < result_parts.size(); i++)
-    {
-        EXPECT_EQ(result_parts[i], expected_parts[i])
-            << "OFFSET: " << i * limit;
-    }
+    ASSERT_EQ(result, expected);
 }
 
 TEST(TRIE, PATTERNCOUNTS4)
@@ -511,25 +491,5 @@ TEST(TRIE, PATTERNCOUNTS4)
     };
 
     ASSERT_EQ(result.size(), expected.size());
-
-    // too big to compare and show the difference, break it down
-    const int limit = 20;
-    vector<unordered_map<string, int>> result_parts;
-    vector<unordered_map<string, int>> expected_parts;
-    auto itr = result.begin(), ite = expected.begin();
-    while (itr != result.end())
-    {
-        unordered_map<string, int> r, e;
-        for (int i = 0; i < limit && itr != result.end(); i++, itr++, ite++)
-            r.insert(*itr), e.insert(*ite);
-
-        result_parts.push_back(r);
-        expected_parts.push_back(e);
-    }
-
-    for (int i = 0; i < result_parts.size(); i++)
-    {
-        EXPECT_EQ(result_parts[i], expected_parts[i])
-            << "OFFSET: " << i * limit;
-    }
+    ASSERT_EQ(result, expected);
 }
