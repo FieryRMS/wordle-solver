@@ -15,7 +15,7 @@ inline bool feq(double a, double b)
 class Wordle {
    public:
     enum TileType {
-        CORRECT ='C',
+        CORRECT = 'C',
         WRONG = 'W',
         MISPLACED = 'M',
         NONE = '.',
@@ -35,8 +35,14 @@ class Wordle {
         bool operator<(const Word &other) const;
     };
 
-   private:
+   protected:
     static const size_t N = 5;
+
+    virtual Trie<N>::Query getUpdatedQuery(const string &guess,
+                                           const string &pattern,
+                                           Trie<N>::Query query);
+
+   private:
     struct Stat {
         string guess;
         string pattern;
@@ -68,30 +74,30 @@ class Wordle {
     bool isGameOver() const { return status != GameStatus::ONGOING; }
     void printPossibleWords() const;
     void printTopNWords(int n);
-    void reset();
+    virtual void reset();
     bool loadCache();
     bool saveCache() const;
     bool isInWordSpace(const string &word, Trie<N>::Query &query) const;
 
     // Getters
+    static string getPattern(string guess, string target);
     int getGuesses() const { return guesses; }
     int getMaxGuesses() const { return maxGuesses; }
     Stat getStat(int i) const;
     string getTargetWord() const { return targetWord; }
     GameStatus getStatus() const { return status; }
     vector<string> getWords(int i) const;
+    virtual map<string, int> getPatternsCounts(const string &guess,
+                                               Trie<N>::Query query) const;
     Word getEntropy(int i, string guess) const;
     virtual vector<Word> getTopNWords(const int n, bool showProgress = false);
+    virtual int getQueryCount(Trie<N>::Query query) const;
 
     // Setters
     void setTargetWord(const string &word) { targetWord = word; }
     void setRandomTargetWord();
 
    private:
-    Trie<N>::Query getUpdatedQuery(const string &guess,
-                                   const string &pattern,
-                                   Trie<N>::Query query);
-
     struct TopWords {
         int n;
         vector<Word> words;

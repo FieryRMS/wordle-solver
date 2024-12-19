@@ -51,8 +51,11 @@ void Simulator::run(int n)
         for (auto &remainingBit : remainingBits)
         {
             points.push_back({ remainingBit, score-- });
-            if (points.back().first == 0 && points.back().second == 2)
-                cout << words[i] << endl;
+            if (points.back().first == 0 && points.back().second > 1)
+            {
+                // algo took more than 1 guess to solve when there was no remaining entropy (ie. it could have solved it in 1 guess)
+                cout << "WARN: BAD GUESSES FOR WORD: " << words[i] << endl;
+            }
         }
     }
     progressBar.finish();

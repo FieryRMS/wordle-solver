@@ -2,7 +2,7 @@
 #include <iostream>
 using namespace std;
 
-void ProgressBar::update(int progress)
+void ProgressBar::update(ull progress)
 {
     int pos = (width * progress) / total;
     int percent = (100 * progress) / total;

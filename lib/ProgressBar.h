@@ -1,15 +1,16 @@
 #pragma once
 
+typedef unsigned long long ull;
 class ProgressBar {
    public:
-    ProgressBar(int total, int width = 70) : total(total), width(width) {}
+    ProgressBar(ull total, int width = 70) : total(total), width(width) {}
 
-    void update(int progress);
-    void setTotal(int t) { this->total = t; }
+    void update(unsigned long long progress);
+    void setTotal(ull t) { this->total = t; }
     void finish();
 
    private:
-    int total;
+    ull total;
     int width;
     int lastPos = -1;
     int lastPercent = -1;

@@ -4,7 +4,7 @@
 #include <iostream>
 #include "Simulator.h"
 #include "wordle.h"
-#include "wordleRegression.h"
+#include "wordleLoop.h"
 
 using namespace std;
 const string allowedFilepath = "res/3b1b/allowed_words.txt";
@@ -16,12 +16,12 @@ int main()
 #ifdef _WIN32
     SetConsoleOutputCP(CP_UTF8);
 #endif
-    WordleRegression wordle(allowedFilepath, possibleFilepath, cacheFilepath);
+    WordleLoop wordle(allowedFilepath, possibleFilepath, cacheFilepath);
     Simulator sim(possibleFilepath, wordle);
 
-    cout << "Run simulator? (y/n): ";
     char choice;
     cin >> choice;
+    cout << "Run simulator? (y/n): ";
     if (choice == 'y')
     {
         sim.run(100);
@@ -77,7 +77,7 @@ int main()
         }
 
         cout << "Resetting game..." << endl << endl;
-        wordle.saveCache();
+        wordle.savePatternCache();
         wordle.reset();
         wordle.setRandomTargetWord();
     }

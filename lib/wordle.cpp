@@ -191,6 +191,40 @@ bool Wordle::isWordValid(const string &word)
     return false;
 }
 
+string Wordle::getPattern(string guess, string target)
+{
+    string pattern(N, TileType::WRONG);
+    vector<bool> visited(N, false);
+
+    // check for correct letters
+    for (int i = 0; i < N; i++)
+    {
+        if (target[i] == guess[i])
+        {
+            pattern[i] = TileType::CORRECT;
+            visited[i] = true;
+        }
+    }
+
+    // check for misplaced letters
+    for (int i = 0; i < N; i++)
+    {
+        if (pattern[i] == TileType::CORRECT) continue;
+        for (int j = 0; j < target.size(); j++)
+        {
+            if (visited[j]) continue;
+            if (target[j] == guess[i])
+            {
+                pattern[i] = TileType::MISPLACED;
+                visited[j] = true;
+                break;
+            }
+        }
+    }
+
+    return pattern;
+}
+
 Wordle::Stat Wordle::guess(const string &guess)
 {
     // return invalid stat
@@ -207,40 +241,11 @@ Wordle::Stat Wordle::guess(const string &guess)
             .valid = false,
         });
 
-    string pattern(N, TileType::WRONG);
-    vector<bool> visited(N, false);
-
-    // check for correct letters
-    int cnt = 0;
-    for (int i = 0; i < N; i++)
-    {
-        if (targetWord[i] == guess[i])
-        {
-            pattern[i] = TileType::CORRECT;
-            visited[i] = true;
-            cnt++;
-        }
-    }
-
-    // check for misplaced letters
-    for (int i = 0; i < N; i++)
-    {
-        if (pattern[i] == TileType::CORRECT) continue;
-        for (int j = 0; j < targetWord.size(); j++)
-        {
-            if (visited[j]) continue;
-            if (targetWord[j] == guess[i])
-            {
-                pattern[i] = TileType::MISPLACED;
-                visited[j] = true;
-                break;
-            }
-        }
-    }
+    string pattern = getPattern(guess, targetWord);
 
     guesses++;
     auto query = getUpdatedQuery(guess, pattern, getStat(-1).query);
-    int count = wordTrie.count(query), prevCount = stats.back().count;
+    int count = getQueryCount(query), prevCount = stats.back().count;
 
     // Information = log2(1 / P(x)) = - log2(P(x)) = - log2(count / prevCount) = log2(prevCount) - log2(count)
     double bits = log2(prevCount) - log2(count);
@@ -258,10 +263,16 @@ Wordle::Stat Wordle::guess(const string &guess)
     });
 
     // query.print(); // for debugging
-    if (cnt == targetWord.size()) status = GameStatus::WON;
+    string winPattern(N, TileType::CORRECT);
+    if (pattern == winPattern) status = GameStatus::WON;
     else if (guesses == maxGuesses) status = GameStatus::LOST;
 
     return stats.back();
+}
+
+int Wordle::getQueryCount(Trie<N>::Query query) const
+{
+    return wordTrie.count(query);
 }
 
 string Wordle::guess2emoji(const string &pattern)
@@ -329,10 +340,16 @@ vector<string> Wordle::getWords(int i) const
     return result;
 }
 
+map<string, int> Wordle::getPatternsCounts(const string &guess,
+                                           Trie<N>::Query query) const
+{
+    return wordTrie.getPatternsCounts(guess, query);
+}
+
 Wordle::Word Wordle::getEntropy(int i, string guess) const
 {
     auto stat = getStat(i);
-    auto patterns = wordTrie.getPatternsCounts(guess, stat.query);
+    auto patterns = getPatternsCounts(guess, stat.query);
     int total = stat.count;
     // E = sum P(x) * log2(1 / P(x)) where x is the pattern
     // log2(1 / P(x)) = - log2(P(x)) = - log2(count / total) = log2(total) - log2(count)

@@ -11,6 +11,8 @@ set(SOURCE_FILES
     Simulator.cpp
     wordleRegression.h
     wordleRegression.cpp
+    wordleLoop.h
+    wordleLoop.cpp
 )
 
 add_library(${PROJECT_NAME} STATIC ${SOURCE_FILES})
