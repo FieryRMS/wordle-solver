@@ -340,7 +340,7 @@ vector<string> Wordle::getWords(int i) const
     return result;
 }
 
-map<string, int> Wordle::getPatternsCounts(const string &guess,
+unordered_map<string, int> Wordle::getPatternsCounts(const string &guess,
                                            Trie<N>::Query query) const
 {
     return wordTrie.getPatternsCounts(guess, query);
@@ -349,7 +349,7 @@ map<string, int> Wordle::getPatternsCounts(const string &guess,
 Wordle::Word Wordle::getEntropy(int i, string guess) const
 {
     auto stat = getStat(i);
-    auto patterns = getPatternsCounts(guess, stat.query);
+    auto patterns = getPatternsCounts(guess, stat.query); // expensive
     int total = stat.count;
     // E = sum P(x) * log2(1 / P(x)) where x is the pattern
     // log2(1 / P(x)) = - log2(P(x)) = - log2(count / total) = log2(total) - log2(count)

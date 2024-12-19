@@ -286,7 +286,7 @@ int Trie<N>::_count(
     // provide the below params if you want to calculate patterns
     const string *guess,
     set<int> (*guessLetters)[26],
-    map<string, int> *memo,
+    unordered_map<string, int> *memo,
     string *pattern,
 
     int idx) const
@@ -444,10 +444,10 @@ void Trie<N>::Query::print() const
 }
 
 template <size_t N>
-map<string, int> Trie<N>::getPatternsCounts(const string &guess,
+unordered_map<string, int> Trie<N>::getPatternsCounts(const string &guess,
                                             Query &SampleSpace) const
 {
-    map<string, int> memo;
+    unordered_map<string, int> memo;
     string pattern(N, TileType::NONE);
     set<int> guessLetters[26];
     string word(N, '.');

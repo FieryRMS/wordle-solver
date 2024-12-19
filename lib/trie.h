@@ -1,5 +1,5 @@
 #pragma once
-#include <map>
+#include <unordered_map>
 #include <set>
 #include <string>
 #include <vector>
@@ -42,7 +42,7 @@ class Trie {
     void insert(const string &word, const ID &id);
     int count(Query query, vector<string> *result = nullptr) const;
     int count(const string &word, const ID &id) const;
-    map<string, int> getPatternsCounts(const string &word,
+    unordered_map<string, int> getPatternsCounts(const string &word,
                                        Query &SampleSpace) const;
     string getNthWord(int n, const ID &id) const;
     Query query(const string s, const ID &id) const;
@@ -82,7 +82,7 @@ class Trie {
                vector<string> *result = nullptr,
                const string *guess = nullptr,
                set<int> (*guessLetters)[26] = nullptr,
-               map<string, int> *memo = nullptr,
+               unordered_map<string, int> *memo = nullptr,
                string *pattern = nullptr,
                int idx = 0) const;
 };

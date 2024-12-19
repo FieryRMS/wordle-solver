@@ -124,10 +124,10 @@ int WordleLoop::getQueryCount(Trie<N>::Query query) const
 /**
  * @brief may cause runtime bugs as it does not depend on the query, only works because super class only ever accesses the most recent query
  */
-map<string, int> WordleLoop::getPatternsCounts(const string &guess,
+unordered_map<string, int> WordleLoop::getPatternsCounts(const string &guess,
                                                Trie<N>::Query query) const
 {
-    map<string, int> patterns;
+    unordered_map<string, int> patterns;
     for (auto &word : words)
     {
         string pattern = cache.patterns.at(guess + word);

@@ -87,7 +87,7 @@ class Wordle {
     string getTargetWord() const { return targetWord; }
     GameStatus getStatus() const { return status; }
     vector<string> getWords(int i) const;
-    virtual map<string, int> getPatternsCounts(const string &guess,
+    virtual unordered_map<string, int> getPatternsCounts(const string &guess,
                                                Trie<N>::Query query) const;
     Word getEntropy(int i, string guess) const;
     virtual vector<Word> getTopNWords(const int n, bool showProgress = false);
@@ -104,7 +104,7 @@ class Wordle {
     };
     struct Cache {
         priority_queue<Word> wordlistCache;
-        map<string, TopWords> TopWordsCache;
+        unordered_map<string, TopWords> TopWordsCache;
         string cachePath;
     };
 

@@ -15,7 +15,7 @@ class WordleLoop : public Wordle {
                const string &possibleFilepath,
                const string &cacheFilepath);
 
-    map<string, int> getPatternsCounts(const string &guess,
+    unordered_map<string, int> getPatternsCounts(const string &guess,
                                        Trie<N>::Query query) const override;
     int getQueryCount(Trie<N>::Query query) const override;
     void reset() override;
@@ -30,7 +30,7 @@ class WordleLoop : public Wordle {
    private:
     struct Cache {
         list<string> words;
-        map<string, string> patterns;
+        unordered_map<string, string> patterns;
     };
     list<string> words;
 

@@ -375,7 +375,7 @@ TEST(TRIE, PATTERNCOUNTS1)
     for (auto &w : words) trie.insert(w, ID);
     auto query = trie.query("", ID);
     auto result = trie.getPatternsCounts(guess, query);
-    map<string, int> expected = {
+    unordered_map<string, int> expected = {
         { "CCCCC", 1 }, { "MWWMW", 1 }, { "WMWMM", 2 },
         { "WMWWM", 3 }, { "WWWMM", 1 },
     };
@@ -391,7 +391,7 @@ TEST(TRIE, PATTERNCOUNTS2)
     for (auto &w : words) trie.insert(w, ID);
     auto query = trie.query("", ID);
     auto result = trie.getPatternsCounts(guess, query);
-    map<string, int> expected = {
+    unordered_map<string, int> expected = {
         { "CCCCC", 1 },
         { "WMCWW", 1 },
     };
@@ -411,7 +411,7 @@ TEST(TRIE, PATTERNCOUNTS3)
     auto query = trie.query("", ID);
     auto result = trie.getPatternsCounts("aband", query);
 
-    map<string, int> expected{
+    unordered_map<string, int> expected{
         { "CCCCC", 1 },    { "CCCWW", 13 },  { "CCMCW", 1 },
         { "CCMWC", 1 },    { "CCMWW", 8 },   { "CCWCW", 2 },
         { "CCWMW", 5 },    { "CCWWC", 4 },   { "CCWWM", 2 },
@@ -457,12 +457,12 @@ TEST(TRIE, PATTERNCOUNTS3)
 
     // too big to compare and show the difference, break it down
     const int limit = 20;
-    vector<map<string, int>> result_parts;
-    vector<map<string, int>> expected_parts;
+    vector<unordered_map<string, int>> result_parts;
+    vector<unordered_map<string, int>> expected_parts;
     auto itr = result.begin(), ite = expected.begin();
     while (itr != result.end())
     {
-        map<string, int> r, e;
+        unordered_map<string, int> r, e;
         for (int i = 0; i < limit && itr != result.end(); i++, itr++, ite++)
             r.insert(*itr), e.insert(*ite);
 
@@ -490,7 +490,7 @@ TEST(TRIE, PATTERNCOUNTS4)
     auto query = trie.query("", ID);
     auto result = trie.getPatternsCounts("annan", query);
 
-    map<string, int> expected{
+    unordered_map<string, int> expected{
         { "CCCCC", 1 },   { "CCCCW", 3 },   { "CCCWW", 5 },   { "CCMMW", 1 },
         { "CCMWW", 1 },   { "CCWCW", 9 },   { "CCWMW", 4 },   { "CCWWC", 3 },
         { "CCWWW", 31 },  { "CMWMW", 13 },  { "CMWWW", 46 },  { "CWCCW", 1 },
@@ -514,12 +514,12 @@ TEST(TRIE, PATTERNCOUNTS4)
 
     // too big to compare and show the difference, break it down
     const int limit = 20;
-    vector<map<string, int>> result_parts;
-    vector<map<string, int>> expected_parts;
+    vector<unordered_map<string, int>> result_parts;
+    vector<unordered_map<string, int>> expected_parts;
     auto itr = result.begin(), ite = expected.begin();
     while (itr != result.end())
     {
-        map<string, int> r, e;
+        unordered_map<string, int> r, e;
         for (int i = 0; i < limit && itr != result.end(); i++, itr++, ite++)
             r.insert(*itr), e.insert(*ite);
 
