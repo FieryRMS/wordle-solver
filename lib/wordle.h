@@ -14,11 +14,11 @@ inline bool feq(double a, double b)
 }
 class Wordle {
    public:
-    enum class TileType {
-        CORRECT,
-        WRONG,
-        MISPLACED,
-        NONE,
+    enum TileType {
+        CORRECT ='C',
+        WRONG = 'W',
+        MISPLACED = 'M',
+        NONE = '.',
     };
 
     enum class GameStatus {
@@ -39,7 +39,7 @@ class Wordle {
     static const size_t N = 5;
     struct Stat {
         string guess;
-        vector<TileType> result;
+        string pattern;
         int count;
         double patternProb;
         double bits;
@@ -64,7 +64,7 @@ class Wordle {
     // Methods
     bool isWordValid(const string &w);
     Stat guess(const string &guess);
-    static string guess2emoji(const vector<TileType> &result);
+    static string guess2emoji(const string &result);
     bool isGameOver() const { return status != GameStatus::ONGOING; }
     void printPossibleWords() const;
     void printTopNWords(int n);
@@ -89,7 +89,7 @@ class Wordle {
 
    private:
     Trie<N>::Query getUpdatedQuery(const string &guess,
-                                   const vector<TileType> &result,
+                                   const string &pattern,
                                    Trie<N>::Query query);
 
     struct TopWords {

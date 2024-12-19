@@ -46,60 +46,53 @@ TEST(WORDLE, GAME_WIN)
 TEST(WORDLE, GAME_EDGE_CASES)
 {
     Wordle wordle(filepath, "aahed", "", EntropyCache);
-    auto result = wordle.guess("bruja").result,
-         expected = vector<Wordle::TileType>{ Wordle::TileType::WRONG,
-                                              Wordle::TileType::WRONG,
-                                              Wordle::TileType::WRONG,
-                                              Wordle::TileType::WRONG,
-                                              Wordle::TileType::MISPLACED };
+    auto pattern = wordle.guess("bruja").pattern,
+         expected = string{ Wordle::TileType::WRONG, Wordle::TileType::WRONG,
+                            Wordle::TileType::WRONG, Wordle::TileType::WRONG,
+                            Wordle::TileType::MISPLACED };
 
-    EXPECT_EQ(result, expected) << "Expected: " << wordle.guess2emoji(expected)
-                                << " Got: " << wordle.guess2emoji(result);
+    EXPECT_EQ(pattern, expected) << "Expected: " << wordle.guess2emoji(expected)
+                                 << " Got: " << wordle.guess2emoji(pattern);
 
-    result = wordle.guess("kiaat").result, expected = vector<Wordle::TileType>{
-        Wordle::TileType::WRONG, Wordle::TileType::WRONG,
-        Wordle::TileType::MISPLACED, Wordle::TileType::MISPLACED,
-        Wordle::TileType::WRONG
-    };
+    pattern = wordle.guess("kiaat").pattern,
+    expected = string{ Wordle::TileType::WRONG, Wordle::TileType::WRONG,
+                       Wordle::TileType::MISPLACED, Wordle::TileType::MISPLACED,
+                       Wordle::TileType::WRONG };
 
-    EXPECT_EQ(result, expected) << "Expected: " << wordle.guess2emoji(expected)
-                                << " Got: " << wordle.guess2emoji(result);
+    EXPECT_EQ(pattern, expected) << "Expected: " << wordle.guess2emoji(expected)
+                                 << " Got: " << wordle.guess2emoji(pattern);
 
-    result = wordle.guess("mahal").result, expected = vector<Wordle::TileType>{
-        Wordle::TileType::WRONG, Wordle::TileType::CORRECT,
-        Wordle::TileType::CORRECT, Wordle::TileType::MISPLACED,
-        Wordle::TileType::WRONG
-    };
+    pattern = wordle.guess("mahal").pattern,
+    expected = string{ Wordle::TileType::WRONG, Wordle::TileType::CORRECT,
+                       Wordle::TileType::CORRECT, Wordle::TileType::MISPLACED,
+                       Wordle::TileType::WRONG };
 
-    EXPECT_EQ(result, expected) << "Expected: " << wordle.guess2emoji(expected)
-                                << " Got: " << wordle.guess2emoji(result);
+    EXPECT_EQ(pattern, expected) << "Expected: " << wordle.guess2emoji(expected)
+                                 << " Got: " << wordle.guess2emoji(pattern);
 
-    result = wordle.guess("shahs").result, expected = vector<Wordle::TileType>{
-        Wordle::TileType::WRONG, Wordle::TileType::MISPLACED,
-        Wordle::TileType::MISPLACED, Wordle::TileType::WRONG,
-        Wordle::TileType::WRONG
-    };
+    pattern = wordle.guess("shahs").pattern,
+    expected = string{ Wordle::TileType::WRONG, Wordle::TileType::MISPLACED,
+                       Wordle::TileType::MISPLACED, Wordle::TileType::WRONG,
+                       Wordle::TileType::WRONG };
 
-    EXPECT_EQ(result, expected) << "Expected: " << wordle.guess2emoji(expected)
-                                << " Got: " << wordle.guess2emoji(result);
+    EXPECT_EQ(pattern, expected) << "Expected: " << wordle.guess2emoji(expected)
+                                 << " Got: " << wordle.guess2emoji(pattern);
 
-    result = wordle.guess("bbaaa").result, expected = vector<Wordle::TileType>{
-        Wordle::TileType::WRONG, Wordle::TileType::WRONG,
-        Wordle::TileType::MISPLACED, Wordle::TileType::MISPLACED,
-        Wordle::TileType::WRONG
-    };
+    pattern = wordle.guess("bbaaa").pattern,
+    expected = string{ Wordle::TileType::WRONG, Wordle::TileType::WRONG,
+                       Wordle::TileType::MISPLACED, Wordle::TileType::MISPLACED,
+                       Wordle::TileType::WRONG };
 
-    EXPECT_EQ(result, expected) << "Expected: " << wordle.guess2emoji(expected)
-                                << " Got: " << wordle.guess2emoji(result);
+    EXPECT_EQ(pattern, expected) << "Expected: " << wordle.guess2emoji(expected)
+                                 << " Got: " << wordle.guess2emoji(pattern);
 
-    result = wordle.guess("aahed").result, expected = vector<Wordle::TileType>{
-        Wordle::TileType::CORRECT, Wordle::TileType::CORRECT,
-        Wordle::TileType::CORRECT, Wordle::TileType::CORRECT,
-        Wordle::TileType::CORRECT
-    };
+    pattern = wordle.guess("aahed").pattern,
+    expected = string{ Wordle::TileType::CORRECT, Wordle::TileType::CORRECT,
+                       Wordle::TileType::CORRECT, Wordle::TileType::CORRECT,
+                       Wordle::TileType::CORRECT };
 
-    EXPECT_EQ(result, expected) << "Expected: " << wordle.guess2emoji(expected)
-                                << " Got: " << wordle.guess2emoji(result);
+    EXPECT_EQ(pattern, expected) << "Expected: " << wordle.guess2emoji(expected)
+                                 << " Got: " << wordle.guess2emoji(pattern);
 }
 
 TEST(WORDLE, COUNT1)
