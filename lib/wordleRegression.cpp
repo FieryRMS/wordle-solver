@@ -18,11 +18,11 @@ WordleRegression::WordleRegression(const string &allowedFilepath,
 
 double WordleRegression::expectedScore(double remainingBits)
 {
-    // 0.00294241x ^ { 3 } - 0.0589565x ^ { 2 } + 0.509969x + 1.02338
+    // 0.00323876x^{3}-0.0646617x^{2}+0.540225x+0.989117
     // the above equation was derived from the data points from the base wordle game
-    return 0.00294241 * pow(remainingBits, 3) -
-           0.0589565 * pow(remainingBits, 2) + 0.509969 * remainingBits +
-           1.02338;
+    return 0.00323876 * pow(remainingBits, 3) -
+           0.0646617 * pow(remainingBits, 2) + 0.540225 * remainingBits +
+           0.989117;
 }
 
 vector<Wordle::Word> WordleRegression::getTopNWords(const int n,
